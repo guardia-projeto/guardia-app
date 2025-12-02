@@ -3,7 +3,9 @@ package com.example.guardia.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -15,15 +17,26 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.rememberScrollState
 
+// Paleta bem próxima do protótipo dos relatórios
+private val FeedbackBgTop = Color(0xFFBDEFFF)
+private val FeedbackBgBottom = Color(0xFF7CB8E4)
+private val FeedbackHeaderText = Color(0xFF0E3B5E)
+private val FeedbackAccentBlue = Color(0xFF0052A3)
+private val FeedbackAccentBlueDark = Color(0xFF003A70)
+private val FeedbackCardBg = Color(0xF7FFFFFF)
+private val FeedbackSubText = Color(0xFF6B7A90)
 
 @Composable
 fun FeedbackScreen(
@@ -37,102 +50,152 @@ fun FeedbackScreen(
 
     val feedbackOptions = listOf("Sugestão", "Elogio", "Problema", "Reclamação")
 
-    // ===== FUNDO COM DEGRADÊ =====
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(
                 Brush.verticalGradient(
                     listOf(
-                        Color(0xFFAEE6FF), // azul bem claro topo
-                        Color(0xFF8CCBEF), // meio
-                        Color(0xFF78B8E3)  // um pouco mais escuro embaixo
+                        FeedbackBgTop,
+                        FeedbackBgBottom
                     )
                 )
             )
     ) {
-
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
 
-            // ===== TOP BAR =====
-            Row(
+            // ===== TOP BAR – estilo "Meus Relatórios" =====
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 20.dp),
-                verticalAlignment = Alignment.CenterVertically
+                    .background(Color.Transparent)
+                    .padding(top = 10.dp, bottom = 4.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Default.ArrowBack,
-                    contentDescription = "voltar",
-                    tint = Color(0xFF102A43),
+                Row(
                     modifier = Modifier
-                        .size(26.dp)
-                        .clickable { onBackClick() }
-                )
-
-                Spacer(Modifier.width(12.dp))
-
-                Text(
-                    "Feedbacks",
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = Color(0xFF0055B8)
-                )
-
-                Spacer(Modifier.weight(1f))
-
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(Color(0xFF0055B8))
-                        .padding(horizontal = 10.dp, vertical = 6.dp),
-                    contentAlignment = Alignment.Center
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Star,
-                        contentDescription = "estrela",
-                        tint = Color(0xFFFFD700),
-                        modifier = Modifier.size(22.dp)
+                        imageVector = Icons.Default.ArrowBack,
+                        contentDescription = "voltar",
+                        tint = FeedbackHeaderText,
+                        modifier = Modifier
+                            .size(26.dp)
+                            .clickable { onBackClick() }
                     )
+
+                    Spacer(Modifier.width(12.dp))
+
+                    // "Meus Feedbacks" com a segunda palavra destacada
+                    Text(
+                        text = buildAnnotatedString {
+                            withStyle(SpanStyle(color = FeedbackHeaderText)) {
+                                append("Meus ")
+                            }
+                            withStyle(
+                                SpanStyle(
+                                    color = FeedbackAccentBlue,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            ) {
+                                append("Feedbacks")
+                            }
+                        },
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+
+                    Spacer(Modifier.weight(1f))
+
+                    // Ícone de destaque na direita (como o clipboard dos relatórios)
+                    Box(
+                        modifier = Modifier
+                            .size(32.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(Color.White.copy(alpha = 0.9f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Star,
+                            contentDescription = "destaque",
+                            tint = FeedbackAccentBlue
+                        )
+                    }
                 }
+
+                // Linha separadora inferior
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .background(Color.White.copy(alpha = 0.55f))
+                )
             }
 
-            // ===== CARD CENTRAL =====
+            Spacer(Modifier.height(10.dp))
+
+            // ===== CARD PRINCIPAL (como se fosse um "card de lista grande") =====
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp)
                     .weight(1f),
-                shape = RoundedCornerShape(24.dp),
+                shape = RoundedCornerShape(26.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = Color.White.copy(alpha = 0.95f)
+                    containerColor = FeedbackCardBg
                 ),
                 elevation = CardDefaults.cardElevation(defaultElevation = 10.dp)
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(20.dp),
+                        .padding(horizontal = 18.dp, vertical = 20.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
 
-                    // ===== TÍTULO =====
-                    Text(
-                        "Somos todo ouvidos!",
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF102A43)
-                    )
+                    // Faixa superior azul – remete à faixa do topo dos relatórios
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .shadow(
+                                elevation = 4.dp,
+                                shape = RoundedCornerShape(18.dp),
+                                clip = false
+                            )
+                            .clip(RoundedCornerShape(18.dp))
+                            .background(
+                                Brush.verticalGradient(
+                                    listOf(
+                                        FeedbackAccentBlue,
+                                        FeedbackAccentBlueDark
+                                    )
+                                )
+                            )
+                            .padding(vertical = 10.dp, horizontal = 16.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Somos todo ouvidos!",
+                            color = Color.White,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center
+                        )
+                    }
 
-                    Spacer(Modifier.height(4.dp))
+                    Spacer(Modifier.height(12.dp))
 
                     Text(
-                        "O quanto você recomenda a Guardiã para amigos e colegas?",
+                        text = "O quanto você recomenda a Guardiã para amigos e colegas?",
                         fontSize = 14.sp,
-                        color = Color(0xFF52606D),
-                        modifier = Modifier.padding(horizontal = 8.dp),
+                        color = FeedbackSubText,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(horizontal = 8.dp)
                     )
 
                     Spacer(Modifier.height(16.dp))
@@ -147,19 +210,18 @@ fun FeedbackScreen(
                             "Sua nota",
                             fontSize = 14.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = Color(0xFF102A43)
+                            color = FeedbackHeaderText
                         )
 
                         Text(
-                            "0 = Não recomendaria | 10 = Recomendo muito",
+                            "0 = Não recomendaria   |   10 = Recomendo muito",
                             fontSize = 11.sp,
-                            color = Color(0xFF9FB3C8)
+                            color = FeedbackSubText
                         )
                     }
 
                     Spacer(Modifier.height(10.dp))
 
-                    // ===== NPS 0–10 =====
                     // ===== NPS 0–10 =====
                     Row(
                         modifier = Modifier
@@ -172,14 +234,18 @@ fun FeedbackScreen(
                         (0..10).forEach { number ->
                             Box(
                                 modifier = Modifier
-                                    .size(30.dp)
+                                    .size(32.dp)
                                     .clip(CircleShape)
                                     .background(
                                         if (selectedScore == number)
-                                            Color(0xFF0055B8)
+                                            FeedbackAccentBlue
                                         else Color.White
                                     )
-                                    .border(1.dp, Color(0xFF0055B8), CircleShape)
+                                    .border(
+                                        width = 1.dp,
+                                        color = FeedbackAccentBlue,
+                                        shape = CircleShape
+                                    )
                                     .clickable { selectedScore = number },
                                 contentAlignment = Alignment.Center
                             ) {
@@ -190,7 +256,7 @@ fun FeedbackScreen(
                                     color = if (selectedScore == number)
                                         Color.White
                                     else
-                                        Color(0xFF102A43)
+                                        FeedbackHeaderText
                                 )
                             }
                         }
@@ -207,34 +273,41 @@ fun FeedbackScreen(
                                 "Tipo de feedback",
                                 fontWeight = FontWeight.SemiBold,
                                 fontSize = 14.sp,
-                                color = Color(0xFF102A43)
+                                color = FeedbackHeaderText
                             )
                             Spacer(Modifier.width(4.dp))
                             Icon(
                                 imageVector = Icons.Default.Info,
                                 contentDescription = null,
-                                tint = Color(0xFF9FB3C8),
+                                tint = FeedbackSubText,
                                 modifier = Modifier.size(16.dp)
                             )
                         }
 
                         Spacer(Modifier.height(6.dp))
 
-                        Box(
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
+                        Box(modifier = Modifier.fillMaxWidth()) {
                             OutlinedButton(
                                 onClick = { expanded = true },
                                 modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(12.dp),
+                                shape = RoundedCornerShape(14.dp),
                                 colors = ButtonDefaults.outlinedButtonColors(
-                                    containerColor = Color(0xFFF7F9FC),
-                                    contentColor = Color(0xFF102A43)
+                                    containerColor = Color(0xFFF6FAFF),
+                                    contentColor = FeedbackHeaderText
+                                ),
+                                border = ButtonDefaults.outlinedButtonBorder.copy(
+                                    width = 1.dp,
+                                    brush = Brush.linearGradient(
+                                        listOf(
+                                            FeedbackAccentBlue.copy(alpha = 0.6f),
+                                            FeedbackAccentBlue.copy(alpha = 0.3f)
+                                        )
+                                    )
                                 )
                             ) {
                                 Text(
                                     selectedType,
-                                    color = Color(0xFF102A43)
+                                    fontSize = 14.sp
                                 )
                             }
 
@@ -260,10 +333,10 @@ fun FeedbackScreen(
                     // ===== TEXTAREA =====
                     Column(modifier = Modifier.fillMaxWidth()) {
                         Text(
-                            "Deixe suas observações (opcional)",
+                            "Deixe suas observações (Opcional)",
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 14.sp,
-                            color = Color(0xFF102A43)
+                            color = FeedbackHeaderText
                         )
 
                         Spacer(Modifier.height(6.dp))
@@ -272,36 +345,47 @@ fun FeedbackScreen(
                             value = text,
                             onValueChange = { text = it },
                             placeholder = {
-                                Text("Descreva o que está pensando...")
+                                Text(
+                                    "Descreva o que está pensando...",
+                                    color = FeedbackSubText.copy(alpha = 0.7f)
+                                )
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(120.dp),
-                            shape = RoundedCornerShape(12.dp),
+                                .height(130.dp)
+                                .shadow(
+                                    elevation = 4.dp,
+                                    shape = RoundedCornerShape(16.dp),
+                                    clip = false
+                                ),
+                            shape = RoundedCornerShape(16.dp),
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = Color(0xFF0055B8),
-                                unfocusedBorderColor = Color(0xFFCBD2D9)
+                                focusedBorderColor = FeedbackAccentBlue,
+                                unfocusedBorderColor = Color(0xFFCED7E5),
+                                focusedContainerColor = Color.White,
+                                unfocusedContainerColor = Color.White
                             )
                         )
                     }
 
-                    Spacer(Modifier.height(20.dp))
+                    Spacer(Modifier.height(22.dp))
 
                     // ===== BOTÃO ENVIAR =====
                     Button(
-                        onClick = { /* TODO: enviar depois */ },
+                        onClick = { /* TODO enviar depois */ },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(48.dp),
-                        shape = RoundedCornerShape(14.dp),
+                            .height(50.dp),
+                        shape = RoundedCornerShape(16.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF0055B8)
+                            containerColor = FeedbackAccentBlue
                         )
                     ) {
                         Text(
                             "Enviar",
                             fontSize = 16.sp,
-                            fontWeight = FontWeight.SemiBold
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color.White
                         )
                     }
                 }
@@ -309,7 +393,7 @@ fun FeedbackScreen(
 
             Spacer(Modifier.height(8.dp))
 
-            // ===== BOTTOM NAVIGATION BAR (ajustada) =====
+            // ===== BOTTOM NAVIGATION BAR =====
             GuardiaBottomBar(
                 currentRoute = "feedback",
                 onItemClick = onBottomItemClick

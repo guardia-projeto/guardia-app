@@ -17,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -135,10 +136,16 @@ fun ComunicacaoFamiliarScreen(navController: NavController) {
                     painter = painterResource(id = R.drawable.guardia_comunicacao),
                     contentDescription = "Família Guardiã",
                     modifier = Modifier
-                        .height(150.dp)
-                        .aspectRatio(0.85f),
+                        .height(170.dp)
+                        .aspectRatio(0.85f)
+                        .offset(y = 27.dp)          // ⬇️ Desce suavemente
+                        .graphicsLayer {
+                            scaleX = 1.15f          // 🔍 Aumenta horizontal
+                            scaleY = 1.15f          // 🔍 Aumenta vertical
+                        },
                     contentScale = ContentScale.Crop
                 )
+
             }
         }
 

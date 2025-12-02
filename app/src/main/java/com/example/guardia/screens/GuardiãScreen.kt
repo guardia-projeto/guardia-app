@@ -1,5 +1,6 @@
 package com.example.guardia.screens
 
+import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.graphics.Paint
@@ -64,7 +65,9 @@ data class MessageUi(
     val text: String
 )
 
-// 👇 bolha de "digitando..."
+// -------------------------------
+// BOLHA "Digitando…"
+// -------------------------------
 @Composable
 private fun TypingBubble() {
     val infiniteTransition = rememberInfiniteTransition(label = "starAnimation")
@@ -124,7 +127,9 @@ private fun TypingBubble() {
     }
 }
 
-// bolha da guardiã (esquerda)
+// -------------------------------
+// MENSAGEM ASSISTENTE
+// -------------------------------
 @Composable
 private fun AssistantMessage(msg: MessageUi) {
     Row(
@@ -133,7 +138,6 @@ private fun AssistantMessage(msg: MessageUi) {
             .padding(start = 10.dp, end = 70.dp, top = 6.dp, bottom = 6.dp),
         verticalAlignment = Alignment.Top
     ) {
-        // avatar maior
         Box(
             modifier = Modifier
                 .size(64.dp)
@@ -167,7 +171,9 @@ private fun AssistantMessage(msg: MessageUi) {
     }
 }
 
-// bolha do usuário (direita)
+// -------------------------------
+// MENSAGEM DO USUÁRIO (ajustada)
+// -------------------------------
 @Composable
 private fun UserMessage(msg: MessageUi) {
     Row(
@@ -177,7 +183,12 @@ private fun UserMessage(msg: MessageUi) {
         horizontalArrangement = Arrangement.End,
         verticalAlignment = Alignment.Bottom
     ) {
+
         Surface(
+            modifier = Modifier
+                .weight(1f, false)
+                .padding(end = 8.dp)
+                .widthIn(max = 250.dp),
             color = Color(0xFF21A189),
             contentColor = Color.White,
             shape = RoundedCornerShape(16.dp)
@@ -190,8 +201,6 @@ private fun UserMessage(msg: MessageUi) {
             )
         }
 
-        Spacer(Modifier.width(8.dp))
-
         Box(
             modifier = Modifier
                 .size(64.dp)
@@ -203,7 +212,7 @@ private fun UserMessage(msg: MessageUi) {
                 painter = painterResource(id = R.drawable.livia),
                 contentDescription = "Usuária",
                 modifier = Modifier
-                    .fillMaxSize(1.0f)
+                    .fillMaxSize()
                     .clip(CircleShape),
                 contentScale = ContentScale.Crop
             )
@@ -211,15 +220,16 @@ private fun UserMessage(msg: MessageUi) {
     }
 }
 
+// -------------------------------
 @Composable
 private fun ChatBubble(msg: MessageUi) {
-    if (msg.role == Role.ASSISTANT) {
-        AssistantMessage(msg)
-    } else {
-        UserMessage(msg)
-    }
+    if (msg.role == Role.ASSISTANT) AssistantMessage(msg)
+    else UserMessage(msg)
 }
 
+// -------------------------------
+// TELA PRINCIPAL
+// -------------------------------
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GuardiaScreen() {
@@ -235,23 +245,13 @@ fun GuardiaScreen() {
 
     val context = LocalContext.current
 
-// DB e repositório com tipos bem claros
-    val db: RelatorioDatabase = remember(context) {
-        RelatorioDatabase.getInstance(context)
-    }
-    val relatorioRepo: RelatorioRepository = remember(db) {
-        RelatorioRepository(db.relatorioDao())
-    }
+    // DB
+    val db = remember(context) { RelatorioDatabase.getInstance(context) }
+    val relatorioRepo = remember(db) { RelatorioRepository(db.relatorioDao()) }
 
-
-    // mensagem de boas-vindas UMA VEZ
     LaunchedEffect(Unit) {
         if (messages.isEmpty()) {
-            messages += MessageUi(
-                id = "welcome",
-                role = Role.ASSISTANT,
-                text = "Olá, Lívia! Me diga, o que temos para hoje?"
-            )
+            messages += MessageUi("welcome", Role.ASSISTANT, "Olá, Lívia! Me diga, o que temos para hoje?")
         }
     }
 
@@ -269,50 +269,40 @@ fun GuardiaScreen() {
                     .fillMaxWidth()
                     .background(
                         Brush.verticalGradient(
-                            listOf(
-                                Color(0xFFB2EBF2),
-                                Color(0xFFE0F7FA)
-                            )
+                            listOf(Color(0xFFB2EBF2), Color(0xFFE0F7FA))
                         )
                     )
                     .padding(top = 16.dp, bottom = 12.dp),
             ) {
                 Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 4.dp),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     IconButton(
                         onClick = {
                             (context as? androidx.activity.ComponentActivity)
-                                ?.onBackPressedDispatcher
-                                ?.onBackPressed()
+                                ?.onBackPressedDispatcher?.onBackPressed()
                         },
                         modifier = Modifier.align(Alignment.CenterStart)
                     ) {
                         Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Voltar",
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            "Voltar",
                             tint = Color(0xFF003E3A)
                         )
                     }
 
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Image(
-                            painter = painterResource(id = R.drawable.ic_guardia_escudo),
-                            contentDescription = "Logo Guardiã",
-                            modifier = Modifier.size(130.dp)
-                        )
-                    }
+                    Image(
+                        painterResource(id = R.drawable.ic_guardia_escudo),
+                        contentDescription = "Logo Guardiã",
+                        modifier = Modifier.size(130.dp)
+                    )
                 }
 
                 Spacer(Modifier.height(12.dp))
 
                 Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(1.dp)
+                    modifier = Modifier.fillMaxWidth().height(1.dp)
                         .background(Color.White.copy(alpha = 0.7f))
                 )
             }
@@ -321,45 +311,33 @@ fun GuardiaScreen() {
     ) { padding ->
 
         Box(
-            modifier = Modifier
-                .fillMaxSize()
+            modifier = Modifier.fillMaxSize()
                 .background(
                     Brush.verticalGradient(
-                        listOf(
-                            Color(0xFFB2EBF2),
-                            Color(0xFFE0F7FA),
-                            Color(0xFF8EC7E3)
-                        )
+                        listOf(Color(0xFFB2EBF2), Color(0xFFE0F7FA), Color(0xFF8EC7E3))
                     )
                 )
                 .padding(padding)
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 6.dp, vertical = 4.dp)
-            ) {
-                // lista de mensagens
+            Column(modifier = Modifier.fillMaxSize().padding(6.dp)) {
+
+                // -----------------------------
+                // LISTA DE MENSAGENS
+                // -----------------------------
                 LazyColumn(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth(),
+                    modifier = Modifier.weight(1f).fillMaxWidth(),
                     state = listState,
-                    contentPadding = PaddingValues(top = 6.dp, bottom = 6.dp)
+                    contentPadding = PaddingValues(6.dp)
                 ) {
-                    items(
-                        items = messages,
-                        key = { item: MessageUi -> item.id }
-                    ) { msg: MessageUi ->
+                    items(messages, key = { it.id }) { msg ->
                         ChatBubble(msg)
                     }
 
                     if (isTyping) {
-                        item {
-                            TypingBubble()
-                        }
+                        item { TypingBubble() }
                     }
 
+                    // ----------- BOTÃO DO PDF ----------
                     if (lastReport != null && lastReport!!.isNotBlank()) {
                         item {
                             TextButton(
@@ -372,47 +350,41 @@ fun GuardiaScreen() {
                                             pdfFile
                                         )
 
-                                        val send = Intent(Intent.ACTION_SEND).apply {
-                                            type = "application/pdf"
-                                            putExtra(Intent.EXTRA_STREAM, uri)
+                                        val openPdf = Intent(Intent.ACTION_VIEW).apply {
+                                            setDataAndType(uri, "application/pdf")
                                             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                                         }
 
-                                        context.startActivity(
-                                            Intent.createChooser(
-                                                send,
-                                                "Compartilhar relatório em PDF"
-                                            )
-                                        )
+                                        try {
+                                            context.startActivity(openPdf)
+                                        } catch (e: ActivityNotFoundException) {
+                                            e.printStackTrace()
+                                        }
+
                                     } catch (e: Exception) {
                                         e.printStackTrace()
                                     }
                                 },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 16.dp)
+                                modifier = Modifier.fillMaxWidth().padding(16.dp)
                             ) {
-                                Text("📄 Compartilhar relatório em PDF", color = Color.White)
+                                Text("📄 Abrir relatório em PDF", color = Color.White)
                             }
                         }
                     }
                 }
 
-                // barra de input
+                // -----------------------------
+                // INPUT
+                // -----------------------------
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 6.dp, vertical = 6.dp)
+                    modifier = Modifier.fillMaxWidth()
+                        .padding(6.dp)
                         .clip(RoundedCornerShape(999.dp))
                         .background(Color(0xFFEFF2F4)),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    IconButton(onClick = { /* futuro: anexar */ }) {
-                        Icon(
-                            imageVector = Icons.Default.Add,
-                            contentDescription = "Mais",
-                            tint = Color(0xFF003E3A)
-                        )
+                    IconButton(onClick = {}) {
+                        Icon(Icons.Default.Add, "Mais", tint = Color(0xFF003E3A))
                     }
 
                     TextField(
@@ -431,6 +403,7 @@ fun GuardiaScreen() {
                     )
 
                     val canSend = userMessage.isNotBlank()
+
                     IconButton(
                         onClick = {
                             if (!canSend) return@IconButton
@@ -442,37 +415,27 @@ fun GuardiaScreen() {
                                 role = Role.USER,
                                 text = original
                             )
+
                             userMessage = ""
                             isTyping = true
                             lastReport = null
                             lastSeverity = null
 
+                            // ----------- CHAMAR API ----------
                             scope.launch {
                                 try {
                                     val res = chatApi.send(ChatRequest(original))
 
                                     if (res.isSuccessful) {
                                         val raw = res.body()?.string()
-
                                         val (replyText, severity, reportText) = try {
+
                                             val json = JSONObject(raw ?: "{}")
 
                                             val reply = json.optString(
                                                 "reply",
                                                 "Não consegui entender a resposta da Guardiã."
                                             )
-
-                                            // detectar se é só saudação simples
-                                            val userText = original.lowercase()
-                                            val words = userText.split("\\s+".toRegex())
-                                                .filter { it.isNotBlank() }
-                                            val greetings = listOf(
-                                                "oi", "olá", "ola", "bom dia",
-                                                "boa tarde", "boa noite", "e aí", "eaí",
-                                                "tudo bem"
-                                            )
-                                            val isGreetingOnly =
-                                                words.size <= 5 && greetings.any { g: String -> g in userText }
 
                                             val risk = json.optJSONObject("risk")
                                             val nivel = risk?.optString("nivel") ?: "Moderado"
@@ -481,45 +444,34 @@ fun GuardiaScreen() {
                                                 risk?.optString("encaminhamento") ?: ""
 
                                             val contextoJson = json.optJSONObject("contexto")
-                                            val resumo =
-                                                contextoJson?.optString("resumoSituacao") ?: ""
+                                            val resumo = contextoJson?.optString("resumoSituacao") ?: ""
                                             val categoria = contextoJson?.optString("categoria") ?: ""
 
-                                            val severityInt: Int
-                                            val report: String
+                                            val severityInt = when (nivel.lowercase()) {
+                                                "alerta" -> 2
+                                                "urgente" -> 3
+                                                else -> 1
+                                            }
 
-                                            if (isGreetingOnly) {
-                                                // só saudação → sem relatório
-                                                severityInt = 0
-                                                report = ""
-                                            } else {
-                                                severityInt = when (nivel.lowercase()) {
-                                                    "alerta" -> 2
-                                                    "urgente" -> 3
-                                                    else -> 1
-                                                }
+                                            val report = buildString {
+                                                appendLine("Resumo da situação: $resumo")
+                                                appendLine("Categoria: $categoria")
+                                                appendLine("Nível de risco: $nivel")
+                                                if (orientacao.isNotBlank()) appendLine("Orientação: $orientacao")
+                                                if (encaminhamento.isNotBlank()) appendLine("Encaminhamento: $encaminhamento")
+                                            }.trim()
 
-                                                report = buildString {
-                                                    appendLine("Resumo da situação: $resumo")
-                                                    appendLine("Categoria: $categoria")
-                                                    appendLine("Nível de risco: $nivel")
-                                                    if (orientacao.isNotBlank()) appendLine("Orientação: $orientacao")
-                                                    if (encaminhamento.isNotBlank()) appendLine("Encaminhamento: $encaminhamento")
-                                                }.trim()
-
-                                                // salva no banco se teve relatório
-                                                if (report.isNotBlank()) {
-                                                    relatorioRepo.salvar(
-                                                        RelatorioEntity(
-                                                            resumo = if (resumo.isNotBlank()) resumo else original,
-                                                            categoria = categoria.ifBlank { "nao_informada" },
-                                                            risco = nivel,
-                                                            orientacao = orientacao,
-                                                            encaminhamento = encaminhamento,
-                                                            textoCompleto = report
-                                                        )
+                                            if (report.isNotBlank()) {
+                                                relatorioRepo.salvar(
+                                                    RelatorioEntity(
+                                                        resumo = resumo.ifBlank { original },
+                                                        categoria = categoria.ifBlank { "nao_informada" },
+                                                        risco = nivel,
+                                                        orientacao = orientacao,
+                                                        encaminhamento = encaminhamento,
+                                                        textoCompleto = report
                                                     )
-                                                }
+                                                )
                                             }
 
                                             Triple(
@@ -527,6 +479,7 @@ fun GuardiaScreen() {
                                                 severityInt,
                                                 report
                                             )
+
                                         } catch (e: Exception) {
                                             Triple(
                                                 raw?.replace("\n", " ")?.trim()
@@ -544,6 +497,7 @@ fun GuardiaScreen() {
                                             role = Role.ASSISTANT,
                                             text = replyText
                                         )
+
                                     } else {
                                         val err = res.errorBody()?.string()
                                         messages += MessageUi(
@@ -552,12 +506,14 @@ fun GuardiaScreen() {
                                             text = "Erro HTTP ${res.code()}: ${err ?: "sem corpo"}"
                                         )
                                     }
+
                                 } catch (e: Exception) {
                                     messages += MessageUi(
                                         id = System.currentTimeMillis().toString() + "_e",
                                         role = Role.ASSISTANT,
                                         text = "Falha de rede no app: ${e.message ?: "desconhecida"}"
                                     )
+
                                 } finally {
                                     isTyping = false
                                 }
@@ -565,17 +521,9 @@ fun GuardiaScreen() {
                         }
                     ) {
                         if (canSend) {
-                            Icon(
-                                imageVector = Icons.Default.Send,
-                                contentDescription = "Enviar",
-                                tint = Color(0xFF003E3A)
-                            )
+                            Icon(Icons.Default.Send, "Enviar", tint = Color(0xFF003E3A))
                         } else {
-                            Icon(
-                                imageVector = Icons.Default.Mic,
-                                contentDescription = "Falar",
-                                tint = Color(0xFF003E3A)
-                            )
+                            Icon(Icons.Default.Mic, "Falar", tint = Color(0xFF003E3A))
                         }
                     }
                 }
@@ -584,7 +532,9 @@ fun GuardiaScreen() {
     }
 }
 
-// Geração de PDF com o texto do relatório
+// ----------------------------------------------------
+// GERAR PDF
+// ----------------------------------------------------
 fun generatePdfReport(context: Context, reportText: String): File {
     val pageWidth = 595
     val pageHeight = 842
@@ -597,16 +547,14 @@ fun generatePdfReport(context: Context, reportText: String): File {
     val paint = Paint()
     paint.isAntiAlias = true
 
-    val textPaint = TextPaint(paint).apply {
-        textSize = 12f
-    }
+    val textPaint = TextPaint(paint).apply { textSize = 12f }
 
     val leftMargin = 40f
     val topMargin = 60f
-    val usableWidth = pageWidth - (leftMargin * 2).toInt()
+    val usableWidth = pageWidth - (leftMargin * 2)
 
     val staticLayout = StaticLayout.Builder
-        .obtain(reportText, 0, reportText.length, textPaint, usableWidth)
+        .obtain(reportText, 0, reportText.length, textPaint, usableWidth.toInt())
         .setAlignment(Layout.Alignment.ALIGN_NORMAL)
         .setLineSpacing(0f, 1f)
         .setIncludePad(false)
@@ -623,10 +571,7 @@ fun generatePdfReport(context: Context, reportText: String): File {
     if (!dir.exists()) dir.mkdirs()
 
     val file = File(dir, "relatorio_guardia_${System.currentTimeMillis()}.pdf")
-    FileOutputStream(file).use { out ->
-        pdfDocument.writeTo(out)
-    }
-
+    FileOutputStream(file).use { pdfDocument.writeTo(it) }
     pdfDocument.close()
     return file
 }
