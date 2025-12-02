@@ -411,6 +411,7 @@ fun GuardiaTipsScreen(
                         "perfil" -> navController.navigate("perfil")
                         "grupo" -> navController.navigate("grupo")
                         "config" -> navController.navigate("config")
+                        "tips" -> navController.navigate("tips")
                     }
                 }
             )
