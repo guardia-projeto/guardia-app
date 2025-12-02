@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.ksp)
 }
 
 android {
@@ -18,24 +19,6 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
-    // Base URL para o emulador falando com seu n8n local
-    buildTypes {
-        debug {
-            buildConfigField(
-                "String",
-                "N8N_BASE_URL",
-                "\"https://arthursilvasoares.app.n8n.cloud/webhook/\"" // termina com /
-            )
-        }
-        release {
-            buildConfigField(
-                "String",
-                "N8N_BASE_URL",
-                "\"https://arthursilvasoares.app.n8n.cloud/webhook/\""
-            )
-            isMinifyEnabled = false
-        }
-    }
     buildFeatures { buildConfig = true }
 
     // Java/Kotlin alinhados em 17
@@ -78,6 +61,9 @@ dependencies {
     implementation("com.squareup.retrofit2:converter-gson:2.11.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
     implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.appcompat)
+    implementation(libs.androidx.compose.animation.core)
+    implementation(libs.androidx.compose.foundation)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
@@ -86,6 +72,14 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
+
+    implementation("androidx.startup:startup-runtime:1.1.1")
+    implementation("androidx.profileinstaller:profileinstaller:1.3.1")
+
+    // ROOM (Banco de dados local)
+    implementation("androidx.room:room-runtime:2.6.1")
+    implementation("androidx.room:room-ktx:2.6.1")
+    ksp("androidx.room:room-compiler:2.6.1")
 
 
 }

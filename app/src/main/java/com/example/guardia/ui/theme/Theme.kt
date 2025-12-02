@@ -10,16 +10,18 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
-import com.example.guardia.ui.theme.brand1200
-import com.example.guardia.ui.theme.brand900
-import com.example.guardia.ui.theme.brand950
-import com.example.guardia.ui.theme.neutral100
-import com.example.guardia.ui.theme.yellow50
 
+// Cores definidas no seu Color.kt
 private val DarkColorScheme = darkColorScheme(
-    primary = neutral100, //
-    secondary =brand950,
-
+    primary = brand700, 
+    onPrimary = neutral100, 
+    secondary = brand950,
+    onSecondary = neutral100, 
+    tertiary = yellow50,
+    background = brand1000,
+    onBackground = neutral100,
+    surface = brand900, 
+    onSurface = neutral100
 )
 
 private val LightColorScheme = lightColorScheme(
@@ -28,18 +30,18 @@ private val LightColorScheme = lightColorScheme(
     secondary = brand950, // card home e chat popup
     onSecondary = neutral100, // texto card home
     tertiary = yellow50, // texto login/cadastro inferior
+    onTertiary = brand650, // cor dos icones perfil
     background = brand1200, //cor do fundo
-    onBackground = brand900, //cor do texto de funo
+    onBackground = brand900, //cor do texto de fundo
     surface = neutral100,
     onSurface = brand900,
-    
 )
 
 @Composable
 fun GuardiaTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    // AQUI: Desativamos a Cor Dinâmica para usar as cores da nossa marca
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {

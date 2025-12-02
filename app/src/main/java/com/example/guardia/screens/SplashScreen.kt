@@ -26,14 +26,9 @@ fun SplashScreen(onNavigateToLogin: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black) // fundo sólido para evitar bordas brancas
+            .background(Color.White)
     ) {
-        Image(
-            painter = painterResource(id = R.drawable.bg_splash),
-            contentDescription = null,
-            modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Crop // garante que a imagem cubra toda a tela
-        )
+
 
         Column(
             modifier = Modifier
@@ -43,12 +38,12 @@ fun SplashScreen(onNavigateToLogin: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Image(
-                painter = painterResource(id = R.drawable.logo_guardia),
-                contentDescription = "Logo Guardião",
+                painter = painterResource(id = R.drawable.shield),
+                contentDescription = "Logo Guardiã",
                 modifier = Modifier.size(350.dp)
             )
             Spacer(modifier = Modifier.height(16.dp))
-            Text(text = "Guardião", color = Color.White)
+            Text(text = "Guardiã", color = Color.White)
         }
     }
 }
