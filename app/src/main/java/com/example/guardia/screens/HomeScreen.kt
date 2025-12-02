@@ -359,11 +359,19 @@ fun HomeScreen(
             Spacer(Modifier.height(16.dp))
         }
 
-        // ✅ Bottom bar compartilhada
         GuardiaBottomBar(
             currentRoute = "home",
-            onItemClick = {
-                onItemClick(it)
+            onItemClick = { route ->
+                when (route) {
+                    "home" -> navController.navigate("home") {
+                        launchSingleTop = true
+                    }
+                    "chat" -> navController.navigate("guardia")
+                    "perfil" -> navController.navigate("perfil")
+                    "grupo" -> navController.navigate("grupo")
+                    "config" -> navController.navigate("config")
+                    "tips" -> navController.navigate("tips")
+                }
             }
         )
     }
