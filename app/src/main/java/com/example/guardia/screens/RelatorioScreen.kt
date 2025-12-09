@@ -26,6 +26,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChatBubbleOutline
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.ChatBubbleOutline
@@ -35,7 +36,10 @@ import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -47,6 +51,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -69,6 +74,7 @@ import androidx.core.content.FileProvider
 import com.example.guardia.data.relatorios.RelatorioDatabase
 import com.example.guardia.data.relatorios.RelatorioEntity
 import com.example.guardia.data.relatorios.RelatorioRepository
+import kotlinx.coroutines.launch
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -124,6 +130,7 @@ fun MeusRelatoriosScreen(
     }
 
     var selectedTab by remember { mutableIntStateOf(2) }
+    val scope = rememberCoroutineScope()
 
     Scaffold(
         topBar = {
@@ -217,8 +224,30 @@ fun MeusRelatoriosScreen(
 
                     RelatorioCardDetailed(
                         relatorio = relatorio,
-                        onClick = {
-                            gerarECompartilharPdf(context, relatorio)
+                        onOpenClick = {
+                            // 👉 Abrir PDF (mesma ideia da Guardiã)
+                            abrirPdfRelatorio(context, relatorio)
+                        },
+                        onShareClick = {
+                            // 👉 Compartilhar PDF
+                            compartilharPdfRelatorio(context, relatorio)
+                        },
+                        onDeleteClick = {
+                            // 👉 Excluir do banco + apagar arquivo local
+                            scope.launch {
+                                // Ajuste o nome do método conforme seu RelatorioRepository
+                                repo.excluir(relatorio)
+
+                                val listaAtualizada = repo.listarTodos()
+                                relatorios = listaAtualizada
+
+                                // Remove o arquivo físico se existir
+                                val dir = File(context.getExternalFilesDir("reports"), "")
+                                val file = File(dir, "relatorio_${relatorio.id}.pdf")
+                                if (file.exists()) {
+                                    file.delete()
+                                }
+                            }
                         }
                     )
                 }
@@ -293,22 +322,26 @@ fun ClipboardIconDetailed() {
     }
 }
 
-// ===== CARD DO RELATÓRIO =====
+// ===== CARD DO RELATÓRIO COM TRÊS BOLINHAS =====
 @Composable
 fun RelatorioCardDetailed(
     relatorio: RelatorioEntity,
-    onClick: () -> Unit
+    onOpenClick: () -> Unit,
+    onShareClick: () -> Unit,
+    onDeleteClick: () -> Unit
 ) {
     val dataFormatada = remember(relatorio.dataHora) {
         val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
         sdf.format(Date(relatorio.dataHora))
     }
 
+    var menuExpanded by remember { mutableStateOf(false) }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .height(80.dp)
-            .clickable { onClick() },
+            .clickable { onOpenClick() }, // clique no card abre o PDF
         shape = RoundedCornerShape(22.dp),
         colors = CardDefaults.cardColors(
             containerColor = CardBg
@@ -325,36 +358,82 @@ fun RelatorioCardDetailed(
                 .shadow(0.dp),
             contentAlignment = Alignment.CenterStart
         ) {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+            Row(
+                modifier = Modifier.fillMaxSize(),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "Relatório Guardiã - $dataFormatada",
-                    fontSize = 17.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = CardTextMain,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = "Risco: ${relatorio.risco} • Categoria: ${relatorio.categoria}",
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Normal,
-                    color = CardTextSub,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = "PDF gerado automaticamente",
-                    fontSize = 11.sp,
-                    color = CardTextSub.copy(alpha = 0.8f)
-                )
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(
+                        text = "Relatório Guardiã - $dataFormatada",
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = CardTextMain,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = "Risco: ${relatorio.risco} • Categoria: ${relatorio.categoria}",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Normal,
+                        color = CardTextSub,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = "PDF gerado automaticamente",
+                        fontSize = 11.sp,
+                        color = CardTextSub.copy(alpha = 0.8f)
+                    )
+                }
+
+                // Três bolinhas (menu)
+                Box {
+                    IconButton(
+                        onClick = { menuExpanded = true }
+                    ) {
+                        androidx.compose.material3.Icon(
+                            imageVector = Icons.Default.MoreVert,
+                            contentDescription = "Mais opções",
+                            tint = CardTextSub
+                        )
+                    }
+
+                    DropdownMenu(
+                        expanded = menuExpanded,
+                        onDismissRequest = { menuExpanded = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Abrir PDF") },
+                            onClick = {
+                                menuExpanded = false
+                                onOpenClick()
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Compartilhar") },
+                            onClick = {
+                                menuExpanded = false
+                                onShareClick()
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Excluir") },
+                            onClick = {
+                                menuExpanded = false
+                                onDeleteClick()
+                            }
+                        )
+                    }
+                }
             }
         }
     }
 }
 
-// ===== BOTTOM BAR CUSTOM =====
+// ===== BOTTOM BAR CUSTOM (se ainda estiver usando) =====
 @Composable
 fun BottomNavigationBarCustom(
     selectedTab: Int,
@@ -443,8 +522,33 @@ fun BottomNavIconItem(
     }
 }
 
-// ===== GERAÇÃO E COMPARTILHAMENTO DE PDF =====
-private fun gerarECompartilharPdf(
+// ===== FUNÇÕES DE PDF =====
+
+// Abre o PDF com um visualizador (igual comportamento "abrir" da Guardiã)
+private fun abrirPdfRelatorio(
+    context: Context,
+    relatorio: RelatorioEntity
+) {
+    val file = criarPdfDoRelatorio(context, relatorio)
+
+    val uri = FileProvider.getUriForFile(
+        context,
+        "${context.packageName}.provider",
+        file
+    )
+
+    val intent = Intent(Intent.ACTION_VIEW).apply {
+        setDataAndType(uri, "application/pdf")
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    }
+
+    context.startActivity(
+        Intent.createChooser(intent, "Abrir relatório em PDF")
+    )
+}
+
+// Compartilha o PDF
+private fun compartilharPdfRelatorio(
     context: Context,
     relatorio: RelatorioEntity
 ) {
