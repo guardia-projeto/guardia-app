@@ -44,6 +44,9 @@ fun AppNavGraph(navController: NavHostController) {
                         // ÍCONE DE CHAT DA BOTTOM BAR
                         "chat" -> navController.navigate("guardia")
 
+                        // LAMPADINHA → TELA DE DICAS
+                        "tips" -> navController.navigate("tips")
+
                         // Botão flutuante ou outros que mandem "home"
                         "home" -> navController.navigate("home") {
                             launchSingleTop = true
@@ -53,7 +56,7 @@ fun AppNavGraph(navController: NavHostController) {
                         "grupo"    -> navController.navigate("grupo")
                         "config"   -> navController.navigate("config")
                         "feedback" -> navController.navigate("feedback")
-                        else -> { /* navController.navigate(route) */ }
+                        else -> { /* nada, rota desconhecida */ }
                     }
                 },
                 onChatClick = {
@@ -151,13 +154,11 @@ fun AppNavGraph(navController: NavHostController) {
         }
 
         // 📕 Glossário Grooming
-        // 📕 Glossário Grooming
         composable("grooming") {
             GroomingScreen(navController = navController)
         }
 
-
-        // 📄 Meus Relatórios ✅ NOVA ROTA
+        // 📄 Meus Relatórios
         composable("relatorios") {
             MeusRelatoriosScreen(
                 onBackClick = { navController.popBackStack() },

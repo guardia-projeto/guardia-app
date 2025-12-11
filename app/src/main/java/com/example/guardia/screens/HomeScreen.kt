@@ -124,43 +124,6 @@ private fun TipsCard(
     )
 }
 
-// ---------- Card com ÍCONE (mantido caso queira usar depois) ----------
-@Composable
-private fun ShortcutCard(
-    title: String,
-    icon: ImageVector,
-    onClick: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(64.dp)
-            .shadow(elevation = 6.dp, shape = RoundedCornerShape(18.dp), clip = false)
-            .background(Color.White, shape = RoundedCornerShape(18.dp))
-            .border(1.dp, CardStroke, RoundedCornerShape(18.dp))
-            .clickable { onClick() }
-            .padding(horizontal = 14.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(
-            modifier = Modifier
-                .size(44.dp)
-                .clip(RoundedCornerShape(14.dp))
-                .background(IconBg),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(icon, contentDescription = title, tint = TitleDark)
-        }
-        Spacer(Modifier.width(12.dp))
-        Text(
-            text = title,
-            fontSize = 15.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = TitleDark
-        )
-    }
-}
-
 data class HomeCardData(val title: String, val icon: ImageVector)
 
 // ---------- TELA ----------
@@ -288,8 +251,8 @@ fun HomeScreen(
                                 .graphicsLayer {
                                     scaleX = 1.8f
                                     scaleY = 1.8f
-                                    translationY = (-26).dp.toPx()   // sobe a imagem
-                                    translationX = (-20).dp.toPx()   // move para a esquerda
+                                    translationY = (-26).dp.toPx()
+                                    translationX = (-20).dp.toPx()
                                     transformOrigin = TransformOrigin.Center
                                 },
                             contentScale = ContentScale.Fit
@@ -300,7 +263,7 @@ fun HomeScreen(
 
             Spacer(Modifier.height(20.dp))
 
-            // Card "Dicas da Guardiã" -> navega para a tela de dicas
+            // Card "Dicas da Guardiã"
             TipsCard(
                 imageRes = R.drawable.ic_dicas,
                 onClick = {
@@ -313,8 +276,7 @@ fun HomeScreen(
 
             Spacer(Modifier.height(14.dp))
 
-            // 🔹 Meus Relatórios — sem rota por enquanto (evita crash)
-// 🔹 Meus Relatórios — agora navega para a tela de relatórios
+            // Meus Relatórios
             ImageCard(
                 title = "Meus Relatórios",
                 imageRes = R.drawable.ic_relatorios,
@@ -328,14 +290,13 @@ fun HomeScreen(
 
             Spacer(Modifier.height(14.dp))
 
-            ImageCard(
+            imageCard@ ImageCard(
                 title = "Upgrade Guardiã",
                 imageRes = R.drawable.estrela,
                 onClick = {
                     navController.navigate("upgrade")
                 },
-
-                        imageSize = 74.dp,
+                imageSize = 74.dp,
                 imageScale = 1.6f,
                 imageOffsetX = (-3).dp,
                 imageOffsetY = (-1).dp
@@ -343,7 +304,6 @@ fun HomeScreen(
 
             Spacer(Modifier.height(14.dp))
 
-            // 🔹 Feedbacks — sem rota por enquanto (evita crash)
             ImageCard(
                 title = "Feedbacks",
                 imageRes = R.drawable.ic_feedbacks,
@@ -355,11 +315,10 @@ fun HomeScreen(
                 imageOffsetY = 0.dp
             )
 
-
             Spacer(Modifier.height(16.dp))
         }
 
-        // ✅ Bottom bar compartilhada
+        // Bottom bar
         GuardiaBottomBar(
             currentRoute = "home",
             onItemClick = {
@@ -375,6 +334,7 @@ fun HomeScreenPreview() {
     val navController = androidx.navigation.compose.rememberNavController()
     HomeScreen(navController = navController)
 }
+
 @Composable
 fun PerfilMenuButton(
     onPerfilClick: () -> Unit,
