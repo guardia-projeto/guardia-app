@@ -2,7 +2,12 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.guardia"
     android:versionCode="1"
-    android:versionName="1.0">
+    android:versionName="1.0"
+
+    >
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+
 
     <uses-sdk
         android:minSdkVersion="24"

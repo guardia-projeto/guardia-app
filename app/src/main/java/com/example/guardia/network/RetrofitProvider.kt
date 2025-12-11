@@ -5,7 +5,7 @@ import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
-private const val N8N_BASE_URL = "https://arthursilvaasoares.app.n8n.cloud/webhook/" // termina com /
+private const val N8N_BASE_URL = "https://arthursilvasooares.app.n8n.cloud/webhook/" // termina com /
 
 fun provideChatApi(): ChatApi {
     val log = HttpLoggingInterceptor().apply {

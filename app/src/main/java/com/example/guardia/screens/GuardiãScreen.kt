@@ -1,25 +1,32 @@
 package com.example.guardia.screens
 
+import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.graphics.Paint
 import android.graphics.pdf.PdfDocument
+import android.speech.RecognizerIntent
 import android.text.Layout
 import android.text.StaticLayout
 import android.text.TextPaint
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -28,8 +35,27 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AssistChipDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -55,6 +81,7 @@ import kotlinx.coroutines.launch
 import org.json.JSONObject
 import java.io.File
 import java.io.FileOutputStream
+import androidx.compose.material.icons.outlined.ChatBubbleOutline
 
 // quem fala
 enum class Role { USER, ASSISTANT }
@@ -172,7 +199,7 @@ private fun AssistantMessage(msg: MessageUi) {
 }
 
 // -------------------------------
-// MENSAGEM DO USUÁRIO (ajustada)
+// MENSAGEM DO USUÁRIO
 // -------------------------------
 @Composable
 private fun UserMessage(msg: MessageUi) {
@@ -220,7 +247,6 @@ private fun UserMessage(msg: MessageUi) {
     }
 }
 
-// -------------------------------
 @Composable
 private fun ChatBubble(msg: MessageUi) {
     if (msg.role == Role.ASSISTANT) AssistantMessage(msg)
@@ -228,9 +254,65 @@ private fun ChatBubble(msg: MessageUi) {
 }
 
 // -------------------------------
-// TELA PRINCIPAL
+// ROW DE MENSAGENS RÁPIDAS
 // -------------------------------
 @OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun QuickRepliesRow(
+    options: List<String>,
+    onSelect: (String) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 10.dp, vertical = 4.dp)
+    ) {
+        Text(
+            text = "Sugestões rápidas",
+            fontSize = 13.sp,
+            color = Color(0xFF004D40),
+            modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
+        )
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            options.forEach { text ->
+                AssistChip(
+                    onClick = { onSelect(text) },
+                    label = {
+                        Text(
+                            text = text,
+                            fontSize = 12.sp,
+                            maxLines = 2
+                        )
+                    },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Outlined.ChatBubbleOutline,
+                            contentDescription = null
+                        )
+                    },
+                    shape = RoundedCornerShape(50),
+                    border = BorderStroke(0.8.dp, Color(0xFF1A7C6A)),
+                    colors = AssistChipDefaults.assistChipColors(
+                        containerColor = Color(0xFF21A189),   // mesmo verde das bolhas
+                        labelColor = Color.White,
+                        leadingIconContentColor = Color.White
+                    )
+                )
+            }
+        }
+    }
+}
+
+// -------------------------------
+// TELA PRINCIPAL
+// -------------------------------
 @Composable
 fun GuardiaScreen() {
     val scope = rememberCoroutineScope()
@@ -249,9 +331,168 @@ fun GuardiaScreen() {
     val db = remember(context) { RelatorioDatabase.getInstance(context) }
     val relatorioRepo = remember(db) { RelatorioRepository(db.relatorioDao()) }
 
+    // 🔹 Mensagens rápidas
+    val quickReplies = listOf(
+        "Suspeito que minha filha está falando com pessoas mais velhas.",
+        "Acho que meu filho está sendo vítima de grooming.",
+        "Meu filho está sendo zombado no grupo da escola.",
+        "Minha filha recebeu pedido de fotos íntimas.",
+        "Meu filho está usando celular demais.",
+        "Quero proteger a privacidade online do meu filho."
+    )
+
+    // 🎤 Launcher para reconhecimento de voz via Intent
+    val speechLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val data = result.data
+            val matches = data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
+            val text = matches?.firstOrNull()
+            if (!text.isNullOrBlank()) {
+                userMessage = text
+            }
+        }
+    }
+
+    fun startVoiceInput() {
+        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+            putExtra(
+                RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
+            )
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE, "pt-BR")
+            putExtra(RecognizerIntent.EXTRA_PROMPT, "Pode falar, estou te ouvindo…")
+        }
+        try {
+            speechLauncher.launch(intent)
+        } catch (e: ActivityNotFoundException) {
+            // Se o dispositivo não tiver app de voz, só ignora por enquanto
+            e.printStackTrace()
+        }
+    }
+
+    // 🔹 Função reutilizável para enviar mensagem (texto ou rápida)
+    fun sendMessage(originalInput: String) {
+        val original = originalInput.trim()
+        if (original.isBlank()) return
+
+        messages += MessageUi(
+            id = System.currentTimeMillis().toString() + "_u",
+            role = Role.USER,
+            text = original
+        )
+
+        userMessage = ""
+        isTyping = true
+        lastReport = null
+        lastSeverity = null
+
+        scope.launch {
+            try {
+                val res = chatApi.send(ChatRequest(original))
+
+                if (res.isSuccessful) {
+                    val raw = res.body()?.string()
+                    val (replyText, severity, reportText) = try {
+
+                        val json = JSONObject(raw ?: "{}")
+
+                        val reply = json.optString(
+                            "reply",
+                            "Não consegui entender a resposta da Guardiã."
+                        )
+
+                        val risk = json.optJSONObject("risk")
+                        val nivel = risk?.optString("nivel") ?: "Moderado"
+                        val orientacao = risk?.optString("orientacao") ?: ""
+                        val encaminhamento =
+                            risk?.optString("encaminhamento") ?: ""
+
+                        val contextoJson = json.optJSONObject("contexto")
+                        val resumo = contextoJson?.optString("resumoSituacao") ?: ""
+                        val categoria = contextoJson?.optString("categoria") ?: ""
+
+                        val severityInt = when (nivel.lowercase()) {
+                            "alerta" -> 2
+                            "urgente" -> 3
+                            else -> 1
+                        }
+
+                        val report = buildString {
+                            appendLine("Resumo da situação: $resumo")
+                            appendLine("Categoria: $categoria")
+                            appendLine("Nível de risco: $nivel")
+                            if (orientacao.isNotBlank()) appendLine("Orientação: $orientacao")
+                            if (encaminhamento.isNotBlank()) appendLine("Encaminhamento: $encaminhamento")
+                        }.trim()
+
+                        if (report.isNotBlank()) {
+                            relatorioRepo.salvar(
+                                RelatorioEntity(
+                                    resumo = resumo.ifBlank { original },
+                                    categoria = categoria.ifBlank { "nao_informada" },
+                                    risco = nivel,
+                                    orientacao = orientacao,
+                                    encaminhamento = encaminhamento,
+                                    textoCompleto = report
+                                )
+                            )
+                        }
+
+                        Triple(
+                            reply.replace("\n", " ").trim(),
+                            severityInt,
+                            report
+                        )
+
+                    } catch (e: Exception) {
+                        Triple(
+                            raw?.replace("\n", " ")?.trim()
+                                ?: "Não consegui processar a resposta.",
+                            0,
+                            ""
+                        )
+                    }
+
+                    lastSeverity = severity
+                    lastReport = reportText.takeIf { it.isNotBlank() }
+
+                    messages += MessageUi(
+                        id = System.currentTimeMillis().toString() + "_a",
+                        role = Role.ASSISTANT,
+                        text = replyText
+                    )
+
+                } else {
+                    val err = res.errorBody()?.string()
+                    messages += MessageUi(
+                        id = System.currentTimeMillis().toString() + "_e",
+                        role = Role.ASSISTANT,
+                        text = "Erro HTTP ${res.code()}: ${err ?: "sem corpo"}"
+                    )
+                }
+
+            } catch (e: Exception) {
+                messages += MessageUi(
+                    id = System.currentTimeMillis().toString() + "_e",
+                    role = Role.ASSISTANT,
+                    text = "Falha de rede no app: ${e.message ?: "desconhecida"}"
+                )
+
+            } finally {
+                isTyping = false
+            }
+        }
+    }
+
     LaunchedEffect(Unit) {
         if (messages.isEmpty()) {
-            messages += MessageUi("welcome", Role.ASSISTANT, "Olá, Lívia! Me diga, o que temos para hoje?")
+            messages += MessageUi(
+                "welcome",
+                Role.ASSISTANT,
+                "Olá, Lívia! Me diga, o que temos para hoje?"
+            )
         }
     }
 
@@ -275,7 +516,9 @@ fun GuardiaScreen() {
                     .padding(top = 16.dp, bottom = 12.dp),
             ) {
                 Box(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 4.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     IconButton(
@@ -302,7 +545,9 @@ fun GuardiaScreen() {
                 Spacer(Modifier.height(12.dp))
 
                 Box(
-                    modifier = Modifier.fillMaxWidth().height(1.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(1.dp)
                         .background(Color.White.copy(alpha = 0.7f))
                 )
             }
@@ -311,7 +556,8 @@ fun GuardiaScreen() {
     ) { padding ->
 
         Box(
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier
+                .fillMaxSize()
                 .background(
                     Brush.verticalGradient(
                         listOf(Color(0xFFB2EBF2), Color(0xFFE0F7FA), Color(0xFF8EC7E3))
@@ -319,13 +565,17 @@ fun GuardiaScreen() {
                 )
                 .padding(padding)
         ) {
-            Column(modifier = Modifier.fillMaxSize().padding(6.dp)) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(6.dp)
+            ) {
 
-                // -----------------------------
                 // LISTA DE MENSAGENS
-                // -----------------------------
                 LazyColumn(
-                    modifier = Modifier.weight(1f).fillMaxWidth(),
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth(),
                     state = listState,
                     contentPadding = PaddingValues(6.dp)
                 ) {
@@ -337,7 +587,7 @@ fun GuardiaScreen() {
                         item { TypingBubble() }
                     }
 
-                    // ----------- BOTÃO DO PDF ----------
+                    // BOTÃO DO PDF
                     if (lastReport != null && lastReport!!.isNotBlank()) {
                         item {
                             TextButton(
@@ -365,7 +615,9 @@ fun GuardiaScreen() {
                                         e.printStackTrace()
                                     }
                                 },
-                                modifier = Modifier.fillMaxWidth().padding(16.dp)
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp)
                             ) {
                                 Text("📄 Abrir relatório em PDF", color = Color.White)
                             }
@@ -373,17 +625,26 @@ fun GuardiaScreen() {
                     }
                 }
 
-                // -----------------------------
+                // 🔹 MENSAGENS RÁPIDAS
+                QuickRepliesRow(
+                    options = quickReplies,
+                    onSelect = { selected ->
+                        if (!isTyping) {
+                            sendMessage(selected)
+                        }
+                    }
+                )
+
                 // INPUT
-                // -----------------------------
                 Row(
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
                         .padding(6.dp)
                         .clip(RoundedCornerShape(999.dp))
                         .background(Color(0xFFEFF2F4)),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    IconButton(onClick = {}) {
+                    IconButton(onClick = { /* futuro: anexar arquivo */ }) {
                         Icon(Icons.Default.Add, "Mais", tint = Color(0xFF003E3A))
                     }
 
@@ -406,117 +667,12 @@ fun GuardiaScreen() {
 
                     IconButton(
                         onClick = {
-                            if (!canSend) return@IconButton
-
-                            val original = userMessage.trim()
-
-                            messages += MessageUi(
-                                id = System.currentTimeMillis().toString() + "_u",
-                                role = Role.USER,
-                                text = original
-                            )
-
-                            userMessage = ""
-                            isTyping = true
-                            lastReport = null
-                            lastSeverity = null
-
-                            // ----------- CHAMAR API ----------
-                            scope.launch {
-                                try {
-                                    val res = chatApi.send(ChatRequest(original))
-
-                                    if (res.isSuccessful) {
-                                        val raw = res.body()?.string()
-                                        val (replyText, severity, reportText) = try {
-
-                                            val json = JSONObject(raw ?: "{}")
-
-                                            val reply = json.optString(
-                                                "reply",
-                                                "Não consegui entender a resposta da Guardiã."
-                                            )
-
-                                            val risk = json.optJSONObject("risk")
-                                            val nivel = risk?.optString("nivel") ?: "Moderado"
-                                            val orientacao = risk?.optString("orientacao") ?: ""
-                                            val encaminhamento =
-                                                risk?.optString("encaminhamento") ?: ""
-
-                                            val contextoJson = json.optJSONObject("contexto")
-                                            val resumo = contextoJson?.optString("resumoSituacao") ?: ""
-                                            val categoria = contextoJson?.optString("categoria") ?: ""
-
-                                            val severityInt = when (nivel.lowercase()) {
-                                                "alerta" -> 2
-                                                "urgente" -> 3
-                                                else -> 1
-                                            }
-
-                                            val report = buildString {
-                                                appendLine("Resumo da situação: $resumo")
-                                                appendLine("Categoria: $categoria")
-                                                appendLine("Nível de risco: $nivel")
-                                                if (orientacao.isNotBlank()) appendLine("Orientação: $orientacao")
-                                                if (encaminhamento.isNotBlank()) appendLine("Encaminhamento: $encaminhamento")
-                                            }.trim()
-
-                                            if (report.isNotBlank()) {
-                                                relatorioRepo.salvar(
-                                                    RelatorioEntity(
-                                                        resumo = resumo.ifBlank { original },
-                                                        categoria = categoria.ifBlank { "nao_informada" },
-                                                        risco = nivel,
-                                                        orientacao = orientacao,
-                                                        encaminhamento = encaminhamento,
-                                                        textoCompleto = report
-                                                    )
-                                                )
-                                            }
-
-                                            Triple(
-                                                reply.replace("\n", " ").trim(),
-                                                severityInt,
-                                                report
-                                            )
-
-                                        } catch (e: Exception) {
-                                            Triple(
-                                                raw?.replace("\n", " ")?.trim()
-                                                    ?: "Não consegui processar a resposta.",
-                                                0,
-                                                ""
-                                            )
-                                        }
-
-                                        lastSeverity = severity
-                                        lastReport = reportText.takeIf { it.isNotBlank() }
-
-                                        messages += MessageUi(
-                                            id = System.currentTimeMillis().toString() + "_a",
-                                            role = Role.ASSISTANT,
-                                            text = replyText
-                                        )
-
-                                    } else {
-                                        val err = res.errorBody()?.string()
-                                        messages += MessageUi(
-                                            id = System.currentTimeMillis().toString() + "_e",
-                                            role = Role.ASSISTANT,
-                                            text = "Erro HTTP ${res.code()}: ${err ?: "sem corpo"}"
-                                        )
-                                    }
-
-                                } catch (e: Exception) {
-                                    messages += MessageUi(
-                                        id = System.currentTimeMillis().toString() + "_e",
-                                        role = Role.ASSISTANT,
-                                        text = "Falha de rede no app: ${e.message ?: "desconhecida"}"
-                                    )
-
-                                } finally {
-                                    isTyping = false
-                                }
+                            if (!canSend) {
+                                // 🎤 Se não tem texto, abre voz
+                                startVoiceInput()
+                            } else {
+                                // Se tem texto, envia
+                                sendMessage(userMessage)
                             }
                         }
                     ) {
@@ -579,5 +735,7 @@ fun generatePdfReport(context: Context, reportText: String): File {
 @Preview(showBackground = true)
 @Composable
 fun GuardiaScreenPreview() {
-    GuardiaScreen()
+    MaterialTheme {
+        GuardiaScreen()
+    }
 }
