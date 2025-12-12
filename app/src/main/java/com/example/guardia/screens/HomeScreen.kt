@@ -8,10 +8,13 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -29,6 +32,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
@@ -92,7 +96,9 @@ private fun ImageCard(
             color = TitleDark,
             modifier = Modifier
                 .align(Alignment.CenterStart)
-                .padding(start = textStartPadding)
+                .padding(start = textStartPadding),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
         )
     }
 }
@@ -105,7 +111,7 @@ private fun TipsCard(
     imageSize: Dp = 70.dp,
     imageScale: Float = 1.0f,
     imagePadding: Dp = 0.dp,
-    imageOffsetX: Dp =  (-3).dp,
+    imageOffsetX: Dp = (-3).dp,
     imageOffsetY: Dp = 0.dp,
     cardHeight: Dp = 84.dp,
     textStartPadding: Dp = 110.dp
@@ -122,43 +128,6 @@ private fun TipsCard(
         cardHeight = cardHeight,
         textStartPadding = textStartPadding
     )
-}
-
-// ---------- Card com ÍCONE (mantido caso queira usar depois) ----------
-@Composable
-private fun ShortcutCard(
-    title: String,
-    icon: ImageVector,
-    onClick: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(64.dp)
-            .shadow(elevation = 6.dp, shape = RoundedCornerShape(18.dp), clip = false)
-            .background(Color.White, shape = RoundedCornerShape(18.dp))
-            .border(1.dp, CardStroke, RoundedCornerShape(18.dp))
-            .clickable { onClick() }
-            .padding(horizontal = 14.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(
-            modifier = Modifier
-                .size(44.dp)
-                .clip(RoundedCornerShape(14.dp))
-                .background(IconBg),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(icon, contentDescription = title, tint = TitleDark)
-        }
-        Spacer(Modifier.width(12.dp))
-        Text(
-            text = title,
-            fontSize = 15.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = TitleDark
-        )
-    }
 }
 
 data class HomeCardData(val title: String, val icon: ImageVector)
@@ -288,8 +257,8 @@ fun HomeScreen(
                                 .graphicsLayer {
                                     scaleX = 1.8f
                                     scaleY = 1.8f
-                                    translationY = (-26).dp.toPx()   // sobe a imagem
-                                    translationX = (-20).dp.toPx()   // move para a esquerda
+                                    translationY = (-26).dp.toPx()
+                                    translationX = (-20).dp.toPx()
                                     transformOrigin = TransformOrigin.Center
                                 },
                             contentScale = ContentScale.Fit
@@ -300,7 +269,7 @@ fun HomeScreen(
 
             Spacer(Modifier.height(20.dp))
 
-            // Card "Dicas da Guardiã" -> navega para a tela de dicas
+            // Card "Dicas da Guardiã"
             TipsCard(
                 imageRes = R.drawable.ic_dicas,
                 onClick = {
@@ -313,8 +282,7 @@ fun HomeScreen(
 
             Spacer(Modifier.height(14.dp))
 
-            // 🔹 Meus Relatórios — sem rota por enquanto (evita crash)
-// 🔹 Meus Relatórios — agora navega para a tela de relatórios
+            // Meus Relatórios
             ImageCard(
                 title = "Meus Relatórios",
                 imageRes = R.drawable.ic_relatorios,
@@ -334,8 +302,7 @@ fun HomeScreen(
                 onClick = {
                     navController.navigate("upgrade")
                 },
-
-                        imageSize = 74.dp,
+                imageSize = 74.dp,
                 imageScale = 1.6f,
                 imageOffsetX = (-3).dp,
                 imageOffsetY = (-1).dp
@@ -343,7 +310,6 @@ fun HomeScreen(
 
             Spacer(Modifier.height(14.dp))
 
-            // 🔹 Feedbacks — sem rota por enquanto (evita crash)
             ImageCard(
                 title = "Feedbacks",
                 imageRes = R.drawable.ic_feedbacks,
@@ -355,17 +321,17 @@ fun HomeScreen(
                 imageOffsetY = 0.dp
             )
 
-
             Spacer(Modifier.height(16.dp))
         }
 
+        // ---------------------------
+        //   BOTTOM BAR (mantido)
+        // ---------------------------
         GuardiaBottomBar(
             currentRoute = "home",
             onItemClick = { route ->
                 when (route) {
-                    "home" -> navController.navigate("home") {
-                        launchSingleTop = true
-                    }
+                    "home" -> navController.navigate("home") { launchSingleTop = true }
                     "chat" -> navController.navigate("guardia")
                     "perfil" -> navController.navigate("perfil")
                     "grupo" -> navController.navigate("grupo")
@@ -383,6 +349,8 @@ fun HomeScreenPreview() {
     val navController = androidx.navigation.compose.rememberNavController()
     HomeScreen(navController = navController)
 }
+
+// ================= MENU LATERAL (Topo) =================
 @Composable
 fun PerfilMenuButton(
     onPerfilClick: () -> Unit,
@@ -403,20 +371,109 @@ fun PerfilMenuButton(
             expanded = expanded,
             onDismissRequest = { expanded = false }
         ) {
-            DropdownMenuItem(
-                text = { Text("Perfil") },
-                onClick = {
-                    expanded = false
-                    onPerfilClick()
+            Column(
+                modifier = Modifier
+                    .width(210.dp)
+                    .padding(horizontal = 8.dp, vertical = 6.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(bottom = 8.dp, top = 2.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(32.dp)
+                            .clip(CircleShape)
+                            .background(
+                                Brush.linearGradient(
+                                    listOf(PrimaryTeal, PrimaryBlue)
+                                )
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "G",
+                            color = Color.White,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Column {
+                        Text(
+                            text = "Menu Guardiã",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = TitleDark
+                        )
+                        Text(
+                            text = "Acesse atalhos rápidos",
+                            fontSize = 11.sp,
+                            color = Color(0xFF7A8CA3)
+                        )
+                    }
                 }
-            )
-            DropdownMenuItem(
-                text = { Text("Configurações") },
-                onClick = {
-                    expanded = false
-                    onConfigClick()
-                }
-            )
+
+                Divider(color = CardStroke)
+
+                DropdownMenuItem(
+                    text = {
+                        Column {
+                            Text(
+                                text = "Perfil",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = TitleDark
+                            )
+                            Text(
+                                text = "Veja seus dados e informações",
+                                fontSize = 11.sp,
+                                color = Color(0xFF7A8CA3)
+                            )
+                        }
+                    },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Outlined.Person,
+                            contentDescription = "Perfil",
+                            tint = PrimaryBlue
+                        )
+                    },
+                    onClick = {
+                        expanded = false
+                        onPerfilClick()
+                    }
+                )
+
+                DropdownMenuItem(
+                    text = {
+                        Column {
+                            Text(
+                                text = "Configurações",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = TitleDark
+                            )
+                            Text(
+                                text = "Notificações, conta e mais",
+                                fontSize = 11.sp,
+                                color = Color(0xFF7A8CA3)
+                            )
+                        }
+                    },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Outlined.Settings,
+                            contentDescription = "Configurações",
+                            tint = PrimaryBlue
+                        )
+                    },
+                    onClick = {
+                        expanded = false
+                        onConfigClick()
+                    }
+                )
+            }
         }
     }
 }
