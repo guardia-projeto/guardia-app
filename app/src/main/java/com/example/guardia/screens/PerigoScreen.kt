@@ -14,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -115,15 +116,18 @@ fun PerigoScreen(onNavigateToGuardia: () -> Unit = {}) {
             )
 
             // Imagem do personagem
+
             Image(
-                painter = painterResource(id = R.drawable.perigos),
+                painter = painterResource(id = R.drawable.perigo),
                 contentDescription = "Personagem Guardiã",
                 modifier = Modifier
-                    .size(290.dp)
+                    .size(290.dp) // tamanho base
                     .align(Alignment.CenterStart)
-                    .offset(x = -40.dp, y = 80.dp),
+                    .offset(x = -40.dp, y = 80.dp)
+                    .scale(1.3f), // aumenta 30% mantendo o eixo
                 contentScale = ContentScale.Crop
             )
+
         }
 
         Spacer(modifier = Modifier.height(24.dp))

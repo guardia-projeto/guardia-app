@@ -40,9 +40,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.example.guardia.R
-import androidx.compose.material.icons.outlined.Person
-import androidx.compose.material.icons.outlined.Settings
-
 
 // ================= CORES E ESTILOS =================
 private val TitleDark  = Color(0xFF0E3B5E)
@@ -114,7 +111,7 @@ private fun TipsCard(
     imageSize: Dp = 70.dp,
     imageScale: Float = 1.0f,
     imagePadding: Dp = 0.dp,
-    imageOffsetX: Dp =  (-3).dp,
+    imageOffsetX: Dp = (-3).dp,
     imageOffsetY: Dp = 0.dp,
     cardHeight: Dp = 84.dp,
     textStartPadding: Dp = 110.dp
@@ -327,11 +324,20 @@ fun HomeScreen(
             Spacer(Modifier.height(16.dp))
         }
 
-        // Bottom bar
+        // ---------------------------
+        //   BOTTOM BAR (mantido)
+        // ---------------------------
         GuardiaBottomBar(
             currentRoute = "home",
-            onItemClick = {
-                onItemClick(it)
+            onItemClick = { route ->
+                when (route) {
+                    "home" -> navController.navigate("home") { launchSingleTop = true }
+                    "chat" -> navController.navigate("guardia")
+                    "perfil" -> navController.navigate("perfil")
+                    "grupo" -> navController.navigate("grupo")
+                    "config" -> navController.navigate("config")
+                    "tips" -> navController.navigate("tips")
+                }
             }
         )
     }
@@ -353,7 +359,6 @@ fun PerfilMenuButton(
     var expanded by remember { mutableStateOf(false) }
 
     Box {
-        // 🔹 Mesma aparência: só o ícone de três barrinhas
         IconButton(onClick = { expanded = true }) {
             Icon(
                 imageVector = Icons.Filled.Menu,
@@ -371,7 +376,6 @@ fun PerfilMenuButton(
                     .width(210.dp)
                     .padding(horizontal = 8.dp, vertical = 6.dp)
             ) {
-                // 🔸 Cabeçalho do menu
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.padding(bottom = 8.dp, top = 2.dp)
@@ -412,7 +416,6 @@ fun PerfilMenuButton(
 
                 Divider(color = CardStroke)
 
-                // 🔹 Item: Perfil
                 DropdownMenuItem(
                     text = {
                         Column {
@@ -442,7 +445,6 @@ fun PerfilMenuButton(
                     }
                 )
 
-                // 🔹 Item: Configurações
                 DropdownMenuItem(
                     text = {
                         Column {
