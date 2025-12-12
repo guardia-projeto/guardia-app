@@ -13,6 +13,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -35,7 +37,7 @@ import com.example.guardia.data.feedback.FeedbackRepository
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
 
-// Cores
+// ================= CORES =================
 private val FeedbackBgTop = Color(0xFFBDEFFF)
 private val FeedbackBgBottom = Color(0xFF7CB8E4)
 private val FeedbackHeaderText = Color(0xFF0E3B5E)
@@ -44,6 +46,7 @@ private val FeedbackAccentBlueDark = Color(0xFF003A70)
 private val FeedbackCardBg = Color(0xF7FFFFFF)
 private val FeedbackSubText = Color(0xFF6B7A90)
 
+// ================= TELA PRINCIPAL =================
 @Composable
 fun FeedbackScreen(
     onBackClick: () -> Unit = {},
@@ -109,7 +112,7 @@ fun FeedbackScreen(
 
                     Spacer(Modifier.height(18.dp))
 
-                    // ===== DROPDOWN =====
+                    // ===== DROPDOWN ESTILIZADO =====
                     FeedbackTypeDropdown(
                         selectedType = selectedType,
                         expanded = expanded,
@@ -120,23 +123,50 @@ fun FeedbackScreen(
 
                     Spacer(Modifier.height(18.dp))
 
-                    // ===== TEXTAREA =====
-                    OutlinedTextField(
-                        value = text,
-                        onValueChange = { text = it },
-                        placeholder = {
-                            Text("Descreva o que está pensando...", color = FeedbackSubText)
-                        },
+                    // ===== TEXTAREA ESTILIZADA =====
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(130.dp)
-                            .shadow(4.dp, RoundedCornerShape(16.dp)),
-                        shape = RoundedCornerShape(16.dp),
-                    )
+                            .shadow(6.dp, RoundedCornerShape(20.dp))
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(Color.White)
+                            .border(
+                                width = 1.dp,
+                                color = Color(0xFFCED7E5),
+                                shape = RoundedCornerShape(20.dp)
+                            )
+                            .padding(horizontal = 4.dp) // leve respiro da borda
+                    ) {
+                        OutlinedTextField(
+                            value = text,
+                            onValueChange = { text = it },
+                            placeholder = {
+                                Text(
+                                    "Descreva o que está pensando...",
+                                    color = FeedbackSubText.copy(alpha = 0.6f),
+                                    fontSize = 14.sp
+                                )
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(150.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Color.Transparent,
+                                unfocusedBorderColor = Color.Transparent,
+                                disabledBorderColor = Color.Transparent,
+                                errorBorderColor = Color.Transparent,
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent,
+                                disabledContainerColor = Color.Transparent
+                            ),
+                            shape = RoundedCornerShape(20.dp),
+                            maxLines = 5
+                        )
+                    }
 
                     Spacer(Modifier.height(22.dp))
 
-                    // ===== BOTÃO ENVIAR (lógica corrigida) =====
+                    // ===== BOTÃO ENVIAR =====
                     Button(
                         onClick = {
                             if (selectedScore == null) {
@@ -158,7 +188,7 @@ fun FeedbackScreen(
                             )
 
                             scope.launch {
-                                // enviarFeedback deve retornar Boolean (true = sucesso, false = erro)
+                                // enviarFeedback retorna Boolean (true = sucesso, false = erro)
                                 val ok = repo.enviarFeedback(data)
                                 isLoading = false
 
@@ -169,7 +199,6 @@ fun FeedbackScreen(
                                         Toast.LENGTH_LONG
                                     ).show()
 
-                                    // limpa os campos
                                     selectedScore = null
                                     selectedType = "Sugestão"
                                     text = ""
@@ -218,6 +247,8 @@ fun FeedbackScreen(
         }
     }
 }
+
+// ================= COMPONENTES =================
 
 @Composable
 private fun TopBar(onBackClick: () -> Unit) {
@@ -358,28 +389,69 @@ private fun FeedbackTypeDropdown(
 
         Spacer(Modifier.height(6.dp))
 
-        Box(modifier = Modifier.fillMaxWidth()) {
-            OutlinedButton(
-                onClick = { onExpandChange(true) },
+        // ------ BOTÃO ESTILIZADO ------
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .shadow(6.dp, RoundedCornerShape(16.dp))
+                .clip(RoundedCornerShape(16.dp))
+                .background(Color.White)
+                .clickable { onExpandChange(true) }
+                .border(
+                    width = 1.dp,
+                    brush = Brush.horizontalGradient(
+                        listOf(
+                            FeedbackAccentBlue.copy(alpha = 0.7f),
+                            FeedbackAccentBlueDark.copy(alpha = 0.5f)
+                        )
+                    ),
+                    shape = RoundedCornerShape(16.dp)
+                )
+                .padding(horizontal = 16.dp, vertical = 14.dp)
+        ) {
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(14.dp)
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(selectedType, fontSize = 14.sp)
-            }
+                Text(
+                    selectedType,
+                    fontSize = 15.sp,
+                    color = FeedbackHeaderText,
+                    fontWeight = FontWeight.Medium
+                )
 
-            DropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { onExpandChange(false) }
-            ) {
-                options.forEach {
-                    DropdownMenuItem(
-                        text = { Text(it) },
-                        onClick = {
-                            onSelect(it)
-                            onExpandChange(false)
-                        }
-                    )
-                }
+                Icon(
+                    imageVector = if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                    contentDescription = null,
+                    tint = FeedbackAccentBlue,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+        }
+
+        // ------ MENU ------
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { onExpandChange(false) },
+            modifier = Modifier
+                .background(Color.White)
+        ) {
+            options.forEach {
+                DropdownMenuItem(
+                    text = {
+                        Text(
+                            it,
+                            fontSize = 14.sp,
+                            color = FeedbackHeaderText,
+                            fontWeight = FontWeight.Medium
+                        )
+                    },
+                    onClick = {
+                        onSelect(it)
+                        onExpandChange(false)
+                    }
+                )
             }
         }
     }
