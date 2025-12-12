@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.sp
 import com.example.guardia.data.feedback.FeedbackData
 import com.example.guardia.data.feedback.FeedbackRepository
 import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
 
 // Cores
 private val FeedbackBgTop = Color(0xFFBDEFFF)
@@ -135,11 +136,15 @@ fun FeedbackScreen(
 
                     Spacer(Modifier.height(22.dp))
 
-                    // ===== BOTÃO ENVIAR (corrigido!) =====
+                    // ===== BOTÃO ENVIAR (lógica corrigida) =====
                     Button(
                         onClick = {
                             if (selectedScore == null) {
-                                Toast.makeText(context, "Escolha uma nota de 0 a 10.", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(
+                                    context,
+                                    "Escolha uma nota de 0 a 10.",
+                                    Toast.LENGTH_SHORT
+                                ).show()
                                 return@Button
                             }
 
@@ -153,17 +158,27 @@ fun FeedbackScreen(
                             )
 
                             scope.launch {
-                                val error = repo.enviarFeedback(data)
+                                // enviarFeedback deve retornar Boolean (true = sucesso, false = erro)
+                                val ok = repo.enviarFeedback(data)
                                 isLoading = false
 
-                                if (error == null) {
-                                    Toast.makeText(context, "Feedback enviado! 💙", Toast.LENGTH_LONG).show()
+                                if (ok) {
+                                    Toast.makeText(
+                                        context,
+                                        "Feedback enviado! 💙",
+                                        Toast.LENGTH_LONG
+                                    ).show()
 
+                                    // limpa os campos
                                     selectedScore = null
                                     selectedType = "Sugestão"
                                     text = ""
                                 } else {
-                                    Toast.makeText(context, "Erro ao enviar: $error", Toast.LENGTH_LONG).show()
+                                    Toast.makeText(
+                                        context,
+                                        "Erro ao enviar. Tente novamente.",
+                                        Toast.LENGTH_LONG
+                                    ).show()
                                 }
                             }
                         },
@@ -231,7 +246,12 @@ private fun TopBar(onBackClick: () -> Unit) {
             Text(
                 text = buildAnnotatedString {
                     withStyle(SpanStyle(color = FeedbackHeaderText)) { append("Meus ") }
-                    withStyle(SpanStyle(color = FeedbackAccentBlue, fontWeight = FontWeight.Bold)) { append("Feedbacks") }
+                    withStyle(
+                        SpanStyle(
+                            color = FeedbackAccentBlue,
+                            fontWeight = FontWeight.Bold
+                        )
+                    ) { append("Feedbacks") }
                 },
                 fontSize = 22.sp,
                 fontWeight = FontWeight.SemiBold
@@ -268,7 +288,7 @@ private fun BlueHeader() {
                     listOf(FeedbackAccentBlue, FeedbackAccentBlueDark)
                 )
             )
-            .padding(vertical = 10.dp),
+            .padding(vertical = 10.dp, horizontal = 16.dp),
         contentAlignment = Alignment.Center
     ) {
         Text(

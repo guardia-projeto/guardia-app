@@ -1,34 +1,36 @@
 package com.example.guardia.data.feedback
 
 import android.util.Log
-import com.google.firebase.firestore.FirebaseFirestore
-import kotlinx.coroutines.tasks.await
-import kotlinx.coroutines.withContext
-import kotlinx.coroutines.Dispatchers
-
-data class FeedbackData(
-    val score: Int,
-    val type: String,
-    val message: String,
-    val timestamp: Long
-)
+import com.google.firebase.database.FirebaseDatabase
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlin.coroutines.resume
 
 class FeedbackRepository {
 
-    private val db = FirebaseFirestore.getInstance()
+    // 👉 AQUI é Realtime Database, não Firestore
+    private val db = FirebaseDatabase.getInstance().reference
 
-    suspend fun enviarFeedback(data: FeedbackData): Boolean = withContext(Dispatchers.IO) {
-        try {
-            // Tira o withTimeout por enquanto pra ver o erro real
-            db.collection("feedbacks")
-                .add(data)
-                .await()
+    suspend fun enviarFeedback(feedback: FeedbackData): Boolean =
+        suspendCancellableCoroutine { cont ->
 
-            Log.d("FeedbackRepository", "Feedback enviado com sucesso")
-            true
-        } catch (e: Exception) {
-            Log.e("FeedbackRepository", "Erro ao enviar feedback", e)
-            false
+            // Vai gravar em: raiz/feedbacks/<idGerado>
+            db.child("feedbacks")
+                .push()
+                .setValue(feedback)
+                .addOnCompleteListener { task ->
+                    if (!cont.isActive) return@addOnCompleteListener
+
+                    if (task.isSuccessful) {
+                        Log.d("FeedbackRepository", "Feedback salvo com sucesso")
+                        cont.resume(true)
+                    } else {
+                        Log.e(
+                            "FeedbackRepository",
+                            "Erro ao salvar feedback",
+                            task.exception
+                        )
+                        cont.resume(false)
+                    }
+                }
         }
-    }
 }
