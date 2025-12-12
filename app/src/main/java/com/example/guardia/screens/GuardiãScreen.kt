@@ -81,7 +81,8 @@ import kotlinx.coroutines.launch
 import org.json.JSONObject
 import java.io.File
 import java.io.FileOutputStream
-import androidx.compose.material.icons.outlined.ChatBubbleOutline
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.text.font.FontWeight
 
 // quem fala
 enum class Role { USER, ASSISTANT }
@@ -254,7 +255,7 @@ private fun ChatBubble(msg: MessageUi) {
 }
 
 // -------------------------------
-// ROW DE MENSAGENS RÁPIDAS
+// ROW DE MENSAGENS RÁPIDAS (MODERNA)
 // -------------------------------
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -267,13 +268,24 @@ private fun QuickRepliesRow(
             .fillMaxWidth()
             .padding(horizontal = 10.dp, vertical = 4.dp)
     ) {
+
+        // Cabeçalho mais limpo
         Text(
-            text = "Sugestões rápidas",
+            text = "Sugestões da Guardiã",
             fontSize = 13.sp,
             color = Color(0xFF004D40),
-            modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.padding(start = 4.dp, bottom = 2.dp)
         )
 
+        Text(
+            text = "Toque para começar rápido uma conversa.",
+            fontSize = 11.sp,
+            color = Color(0xFF5F7B76),
+            modifier = Modifier.padding(start = 4.dp, bottom = 6.dp)
+        )
+
+        // Linha de chips
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -293,14 +305,16 @@ private fun QuickRepliesRow(
                     },
                     leadingIcon = {
                         Icon(
-                            imageVector = Icons.Outlined.ChatBubbleOutline,
-                            contentDescription = null
+                            imageVector = Icons.Default.Star,
+                            contentDescription = null,
+                            tint = Color(0xFFFFD700),
+                            modifier = Modifier.size(16.dp)
                         )
                     },
                     shape = RoundedCornerShape(50),
                     border = BorderStroke(0.8.dp, Color(0xFF1A7C6A)),
                     colors = AssistChipDefaults.assistChipColors(
-                        containerColor = Color(0xFF21A189),   // mesmo verde das bolhas
+                        containerColor = Color(0xFF21A189),
                         labelColor = Color.White,
                         leadingIconContentColor = Color.White
                     )
@@ -309,6 +323,8 @@ private fun QuickRepliesRow(
         }
     }
 }
+
+
 
 // -------------------------------
 // TELA PRINCIPAL
@@ -367,7 +383,6 @@ fun GuardiaScreen() {
         try {
             speechLauncher.launch(intent)
         } catch (e: ActivityNotFoundException) {
-            // Se o dispositivo não tiver app de voz, só ignora por enquanto
             e.printStackTrace()
         }
     }
@@ -625,7 +640,7 @@ fun GuardiaScreen() {
                     }
                 }
 
-                // 🔹 MENSAGENS RÁPIDAS
+                // 🔹 MENSAGENS RÁPIDAS (CARD DESTACADO)
                 QuickRepliesRow(
                     options = quickReplies,
                     onSelect = { selected ->
@@ -668,10 +683,8 @@ fun GuardiaScreen() {
                     IconButton(
                         onClick = {
                             if (!canSend) {
-                                // 🎤 Se não tem texto, abre voz
                                 startVoiceInput()
                             } else {
-                                // Se tem texto, envia
                                 sendMessage(userMessage)
                             }
                         }
