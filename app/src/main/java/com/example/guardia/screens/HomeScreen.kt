@@ -8,10 +8,13 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -29,6 +32,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
@@ -36,6 +40,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.example.guardia.R
+import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.Settings
+
 
 // ================= CORES E ESTILOS =================
 private val TitleDark  = Color(0xFF0E3B5E)
@@ -92,7 +99,9 @@ private fun ImageCard(
             color = TitleDark,
             modifier = Modifier
                 .align(Alignment.CenterStart)
-                .padding(start = textStartPadding)
+                .padding(start = textStartPadding),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
         )
     }
 }
@@ -290,7 +299,7 @@ fun HomeScreen(
 
             Spacer(Modifier.height(14.dp))
 
-            imageCard@ ImageCard(
+            ImageCard(
                 title = "Upgrade Guardiã",
                 imageRes = R.drawable.estrela,
                 onClick = {
@@ -335,6 +344,7 @@ fun HomeScreenPreview() {
     HomeScreen(navController = navController)
 }
 
+// ================= MENU LATERAL (Topo) =================
 @Composable
 fun PerfilMenuButton(
     onPerfilClick: () -> Unit,
@@ -343,6 +353,7 @@ fun PerfilMenuButton(
     var expanded by remember { mutableStateOf(false) }
 
     Box {
+        // 🔹 Mesma aparência: só o ícone de três barrinhas
         IconButton(onClick = { expanded = true }) {
             Icon(
                 imageVector = Icons.Filled.Menu,
@@ -355,20 +366,112 @@ fun PerfilMenuButton(
             expanded = expanded,
             onDismissRequest = { expanded = false }
         ) {
-            DropdownMenuItem(
-                text = { Text("Perfil") },
-                onClick = {
-                    expanded = false
-                    onPerfilClick()
+            Column(
+                modifier = Modifier
+                    .width(210.dp)
+                    .padding(horizontal = 8.dp, vertical = 6.dp)
+            ) {
+                // 🔸 Cabeçalho do menu
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(bottom = 8.dp, top = 2.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(32.dp)
+                            .clip(CircleShape)
+                            .background(
+                                Brush.linearGradient(
+                                    listOf(PrimaryTeal, PrimaryBlue)
+                                )
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "G",
+                            color = Color.White,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Column {
+                        Text(
+                            text = "Menu Guardiã",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = TitleDark
+                        )
+                        Text(
+                            text = "Acesse atalhos rápidos",
+                            fontSize = 11.sp,
+                            color = Color(0xFF7A8CA3)
+                        )
+                    }
                 }
-            )
-            DropdownMenuItem(
-                text = { Text("Configurações") },
-                onClick = {
-                    expanded = false
-                    onConfigClick()
-                }
-            )
+
+                Divider(color = CardStroke)
+
+                // 🔹 Item: Perfil
+                DropdownMenuItem(
+                    text = {
+                        Column {
+                            Text(
+                                text = "Perfil",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = TitleDark
+                            )
+                            Text(
+                                text = "Veja seus dados e informações",
+                                fontSize = 11.sp,
+                                color = Color(0xFF7A8CA3)
+                            )
+                        }
+                    },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Outlined.Person,
+                            contentDescription = "Perfil",
+                            tint = PrimaryBlue
+                        )
+                    },
+                    onClick = {
+                        expanded = false
+                        onPerfilClick()
+                    }
+                )
+
+                // 🔹 Item: Configurações
+                DropdownMenuItem(
+                    text = {
+                        Column {
+                            Text(
+                                text = "Configurações",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = TitleDark
+                            )
+                            Text(
+                                text = "Notificações, conta e mais",
+                                fontSize = 11.sp,
+                                color = Color(0xFF7A8CA3)
+                            )
+                        }
+                    },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Outlined.Settings,
+                            contentDescription = "Configurações",
+                            tint = PrimaryBlue
+                        )
+                    },
+                    onClick = {
+                        expanded = false
+                        onConfigClick()
+                    }
+                )
+            }
         }
     }
 }
