@@ -11,10 +11,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -32,10 +32,11 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
 import com.example.guardia.data.feedback.FeedbackData
 import com.example.guardia.data.feedback.FeedbackRepository
 import kotlinx.coroutines.launch
-import androidx.compose.runtime.rememberCoroutineScope
 
 // ================= CORES =================
 private val FeedbackBgTop = Color(0xFFBDEFFF)
@@ -49,8 +50,8 @@ private val FeedbackSubText = Color(0xFF6B7A90)
 // ================= TELA PRINCIPAL =================
 @Composable
 fun FeedbackScreen(
-    onBackClick: () -> Unit = {},
-    onBottomItemClick: (String) -> Unit = {}
+    navController: NavHostController,
+    onBackClick: () -> Unit = { navController.popBackStack() }
 ) {
     var selectedScore by remember { mutableStateOf<Int?>(null) }
     var expanded by remember { mutableStateOf(false) }
@@ -86,14 +87,12 @@ fun FeedbackScreen(
                 colors = CardDefaults.cardColors(containerColor = FeedbackCardBg),
                 elevation = CardDefaults.cardElevation(defaultElevation = 10.dp)
             ) {
-
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(horizontal = 18.dp, vertical = 20.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-
                     BlueHeader()
 
                     Spacer(Modifier.height(16.dp))
@@ -135,7 +134,7 @@ fun FeedbackScreen(
                                 color = Color(0xFFCED7E5),
                                 shape = RoundedCornerShape(20.dp)
                             )
-                            .padding(horizontal = 4.dp) // leve respiro da borda
+                            .padding(horizontal = 4.dp)
                     ) {
                         OutlinedTextField(
                             value = text,
@@ -188,7 +187,6 @@ fun FeedbackScreen(
                             )
 
                             scope.launch {
-                                // enviarFeedback retorna Boolean (true = sucesso, false = erro)
                                 val ok = repo.enviarFeedback(data)
                                 isLoading = false
 
@@ -238,9 +236,21 @@ fun FeedbackScreen(
 
             Spacer(Modifier.height(8.dp))
 
+            // ✅ BottomBar igual à Home: navega direto pelo navController
             GuardiaBottomBar(
                 currentRoute = "feedback",
-                onItemClick = onBottomItemClick
+                onItemClick = { route ->
+                    when (route) {
+                        "home" -> navController.navigate("home") { launchSingleTop = true }
+                        "chat" -> navController.navigate("guardia") { launchSingleTop = true }
+                        "perfil" -> navController.navigate("perfil") { launchSingleTop = true }
+                        "grupo" -> navController.navigate("grupo") { launchSingleTop = true }
+                        "config" -> navController.navigate("config") { launchSingleTop = true }
+                        "tips" -> navController.navigate("tips") { launchSingleTop = true }
+                        // se existir rota específica:
+                        "feedback" -> navController.navigate("feedback") { launchSingleTop = true }
+                    }
+                }
             )
 
             Spacer(Modifier.height(8.dp))
@@ -344,9 +354,7 @@ private fun ScoreSelector(selected: Int?, onSelect: (Int) -> Unit) {
                 modifier = Modifier
                     .size(32.dp)
                     .clip(CircleShape)
-                    .background(
-                        if (selected == number) FeedbackAccentBlue else Color.White
-                    )
+                    .background(if (selected == number) FeedbackAccentBlue else Color.White)
                     .border(1.dp, FeedbackAccentBlue, CircleShape)
                     .clickable { onSelect(number) },
                 contentAlignment = Alignment.Center
@@ -389,7 +397,6 @@ private fun FeedbackTypeDropdown(
 
         Spacer(Modifier.height(6.dp))
 
-        // ------ BOTÃO ESTILIZADO ------
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -430,12 +437,10 @@ private fun FeedbackTypeDropdown(
             }
         }
 
-        // ------ MENU ------
         DropdownMenu(
             expanded = expanded,
             onDismissRequest = { onExpandChange(false) },
-            modifier = Modifier
-                .background(Color.White)
+            modifier = Modifier.background(Color.White)
         ) {
             options.forEach {
                 DropdownMenuItem(
@@ -461,6 +466,6 @@ private fun FeedbackTypeDropdown(
 @Composable
 fun PreviewFeedbackScreen() {
     MaterialTheme {
-        FeedbackScreen()
+        FeedbackScreen(navController = rememberNavController())
     }
 }
