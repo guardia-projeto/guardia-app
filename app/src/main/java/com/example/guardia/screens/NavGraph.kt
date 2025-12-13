@@ -114,10 +114,9 @@ fun AppNavGraph(navController: NavHostController) {
 
         // 📝 Feedback
         composable("feedback") {
-            FeedbackScreen(
-                onBackClick = { navController.popBackStack() }
-            )
+            FeedbackScreen(navController = navController)
         }
+
 
         // ✏️ Editar perfil
         composable("editProfile") {
