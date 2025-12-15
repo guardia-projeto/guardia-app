@@ -16,18 +16,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.guardia.R
@@ -50,89 +47,117 @@ fun PerigoScreen(onNavigateToGuardia: () -> Unit = {}) {
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        // Header com imagem e círculos decorativos
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(260.dp)
-        ) {
-            // Texto de introdução (fundo)
-            Column(
+        // Header com imagem e círculos decorativos (RESPONSIVO: altura varia com a largura)
+        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+            val w = maxWidth
+
+            // ✅ Altura responsiva do header (evita ficar "gigante" em alguns celulares)
+            val headerHeight = (w * 0.70f).coerceIn(220.dp, 290.dp)
+            val h = headerHeight
+
+            // --- valores responsivos (com limites para não ficar gigante/pequeno demais)
+            val circle1: Dp = (w * 0.28f).coerceIn(80.dp, 120.dp)
+            val circle2: Dp = (w * 0.20f).coerceIn(60.dp, 95.dp)
+            val circle3: Dp = (w * 0.12f).coerceIn(36.dp, 60.dp)
+
+            // Círculos (posições responsivas)
+            val c1x = (w * 0.04f)
+            val c1y = (h * 0.64f)
+
+            val c2x = (w * 0.13f)
+            val c2y = (h * 0.54f)
+
+            val c3x = (w * 0.22f)
+            val c3y = (h * 0.47f)
+
+            // Texto de introdução: posição responsiva (não some e não invade)
+            val introStart = (w * 0.45f).coerceIn(130.dp, 210.dp)
+            val introTopFix = 22.dp // ↑ aumenta pra descer mais
+            val introTop = ((h * 0.34f) + introTopFix).coerceIn(86.dp, 150.dp)
+            val introMaxWidth = (w * 0.52f).coerceIn(160.dp, 260.dp)
+
+            // Imagem responsiva
+            val imgSize = (w * 0.78f).coerceIn(220.dp, 320.dp)
+            val imgOffsetX = -(w * 0.10f).coerceIn(18.dp, 50.dp)
+            val imgOffsetY = (h * 0.34f).coerceIn(72.dp, 120.dp)
+
+            Box(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(top = 80.dp, start = 24.dp, end = 24.dp)
+                    .fillMaxWidth()
+                    .height(headerHeight)
             ) {
+                // Texto de introdução (fundo)
                 Text(
-                    "Os jogos online, por sua natureza interativa e muitas vezes anônima, criam um ecossistema com vulnerabilidades específicas que exigem atenção redobrada dos pais e cuidadores.",
+                    text = "Os jogos online, por sua natureza interativa e muitas vezes anônima, criam um ecossistema com vulnerabilidades específicas que exigem atenção redobrada dos pais e cuidadores.",
                     color = text_color_on_dark,
                     fontSize = 13.sp,
                     lineHeight = 18.sp,
-                    modifier = Modifier.padding(start = 160.dp)
+                    modifier = Modifier
+                        .offset(x = introStart, y = introTop)
+                        .widthIn(max = introMaxWidth)
+                        .padding(end = 12.dp)
+                )
+
+                // Header principal
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(section_header_bg_color)
+                        .padding(vertical = 16.dp, horizontal = 24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "Riscos do Ambiente dos Jogos Online:",
+                        color = Color.White,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "A diversão também merece atenção!",
+                        color = Color.White.copy(alpha = 0.9f),
+                        fontSize = 14.sp,
+                        textAlign = TextAlign.Center
+                    )
+                }
+
+                // Círculos decorativos
+                Box(
+                    modifier = Modifier
+                        .offset(x = c1x, y = c1y)
+                        .size(circle1)
+                        .background(color = Color(0xFF323ACE), shape = CircleShape)
+                )
+                Box(
+                    modifier = Modifier
+                        .offset(x = c2x, y = c2y)
+                        .size(circle2)
+                        .background(color = card_bg_color, shape = CircleShape)
+                )
+                Box(
+                    modifier = Modifier
+                        .offset(x = c3x, y = c3y)
+                        .size(circle3)
+                        .background(color = Color(0xFF0A0647), shape = CircleShape)
+                )
+
+                // Imagem do personagem
+                Image(
+                    painter = painterResource(id = R.drawable.perigo),
+                    contentDescription = "Personagem Guardiã",
+                    modifier = Modifier
+                        .size(imgSize)
+                        .align(Alignment.CenterStart)
+                        .offset(x = imgOffsetX, y = imgOffsetY)
+                        .scale(1.2f),
+                    contentScale = ContentScale.Crop
                 )
             }
-
-            // Header principal
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(section_header_bg_color)
-                    .padding(vertical = 16.dp, horizontal = 24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = "Riscos do Ambiente dos Jogos Online:",
-                    color = Color.White,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "A diversão também merece atenção!",
-                    color = Color.White.copy(alpha = 0.9f),
-                    fontSize = 14.sp,
-                    textAlign = TextAlign.Center
-                )
-            }
-
-            // Círculos decorativos
-            Box(
-                modifier = Modifier
-                    .offset(x = 15.dp, y = 120.dp)
-                    .size(110.dp)
-                    .background(color = Color(0xFF323ACE), shape = CircleShape)
-            )
-            Box(
-                modifier = Modifier
-                    .offset(x = 50.dp, y = 90.dp)
-                    .size(80.dp)
-                    .background(color = card_bg_color, shape = CircleShape)
-            )
-            Box(
-                modifier = Modifier
-                    .offset(x = 85.dp, y = 75.dp)
-                    .size(45.dp)
-                    .background(color = Color(0xFF0A0647), shape = CircleShape)
-            )
-
-            // Imagem do personagem
-
-            Image(
-                painter = painterResource(id = R.drawable.perigo),
-                contentDescription = "Personagem Guardiã",
-                modifier = Modifier
-                    .size(290.dp) // tamanho base
-                    .align(Alignment.CenterStart)
-                    .offset(x = -40.dp, y = 80.dp)
-                    .scale(1.3f), // aumenta 30% mantendo o eixo
-                contentScale = ContentScale.Crop
-            )
-
         }
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Card de título
         TitleCard("Perigos de Interação e Conteúdo (Contato e Conduta)")
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -210,7 +235,6 @@ fun PerigoScreen(onNavigateToGuardia: () -> Unit = {}) {
 
         TitleCard("Benefícios (Com Moderação e Supervisão)")
 
-        // Benefícios com divisores
         Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)) {
             BenefitItem(
                 "Desenvolvimento Cognitivo",
@@ -285,6 +309,7 @@ fun PerigoScreen(onNavigateToGuardia: () -> Unit = {}) {
                 )
             }
         }
+
         Spacer(modifier = Modifier.height(32.dp))
     }
 }
