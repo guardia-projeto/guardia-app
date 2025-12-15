@@ -297,7 +297,8 @@ fun RelatorioCardDetailed(
 }
 
 /* ================== PDF ================== */
-private fun criarPdfDoRelatorio(
+/** ✅ MUDANÇA: removi o `private` para a GuardiãScreen poder chamar */
+fun criarPdfDoRelatorio(
     context: Context,
     relatorio: RelatorioEntity
 ): File {
@@ -321,7 +322,6 @@ private fun criarPdfDoRelatorio(
 
     val maxWidth = pageWidth - margin * 2
 
-    // --------- helpers de cálculo (pra altura dinâmica) ----------
     fun countWrappedLines(text: String, textSize: Float, bold: Boolean = false): Int {
         if (text.isBlank()) return 1
 
@@ -349,7 +349,6 @@ private fun criarPdfDoRelatorio(
         return lines
     }
 
-    // tenta ler a logo para calcular o espaço dela no topo
     val logo: Bitmap? = runCatching {
         BitmapFactory.decodeResource(context.resources, R.drawable.shield)
     }.getOrNull()
@@ -426,7 +425,6 @@ private fun criarPdfDoRelatorio(
         }
     }
 
-    // ✅ NOVO: desenhar texto centralizado (1 linha)
     fun drawCenteredText(text: String, textSize: Float, bold: Boolean = false) {
         val clean = if (text.isBlank()) "-" else text
 
@@ -448,7 +446,6 @@ private fun criarPdfDoRelatorio(
         y += lineHeight / 2
     }
 
-    // ===== LOGO =====
     if (logo != null && logo.width > 0 && logo.height > 0) {
         val scale = logoDesiredWidth / logo.width.toFloat()
         val desiredHeight = (logo.height * scale).toInt()
@@ -465,11 +462,9 @@ private fun criarPdfDoRelatorio(
         y += desiredHeight + 24f
     }
 
-    // ===== TÍTULO (CENTRALIZADO) =====
     drawCenteredText("Relatório Guardiã", titleTextSize, bold = true)
     y += lineHeight / 2
 
-    // ===== CAMPOS (DESTACADOS) =====
     drawField("Resumo da situação", relatorio.resumo)
     drawField("Categoria", relatorio.categoria)
     drawField("Nível de risco", relatorio.risco)
@@ -489,7 +484,8 @@ private fun criarPdfDoRelatorio(
 }
 
 /* ================== ABRIR / COMPARTILHAR ================== */
-private fun abrirPdfRelatorio(context: Context, relatorio: RelatorioEntity) {
+/** ✅ Também deixei públicas para reutilizar em outras telas, se quiser */
+fun abrirPdfRelatorio(context: Context, relatorio: RelatorioEntity) {
     val file = criarPdfDoRelatorio(context, relatorio)
 
     val uri = FileProvider.getUriForFile(
@@ -506,7 +502,7 @@ private fun abrirPdfRelatorio(context: Context, relatorio: RelatorioEntity) {
     context.startActivity(Intent.createChooser(intent, "Abrir relatório em PDF"))
 }
 
-private fun compartilharPdfRelatorio(context: Context, relatorio: RelatorioEntity) {
+fun compartilharPdfRelatorio(context: Context, relatorio: RelatorioEntity) {
     val file = criarPdfDoRelatorio(context, relatorio)
 
     val uri = FileProvider.getUriForFile(

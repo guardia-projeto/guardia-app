@@ -2,14 +2,8 @@ package com.example.guardia.screens
 
 import android.app.Activity
 import android.content.ActivityNotFoundException
-import android.content.Context
 import android.content.Intent
-import android.graphics.Paint
-import android.graphics.pdf.PdfDocument
 import android.speech.RecognizerIntent
-import android.text.Layout
-import android.text.StaticLayout
-import android.text.TextPaint
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.LinearEasing
@@ -22,13 +16,25 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
@@ -41,7 +47,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -50,8 +55,8 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -66,10 +71,10 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.FileProvider
 import com.example.guardia.R
 import com.example.guardia.data.relatorios.RelatorioDatabase
 import com.example.guardia.data.relatorios.RelatorioEntity
@@ -77,12 +82,9 @@ import com.example.guardia.data.relatorios.RelatorioRepository
 import com.example.guardia.network.ChatApi
 import com.example.guardia.network.ChatRequest
 import com.example.guardia.network.provideChatApi
+import com.example.guardia.utils.abrirRelatorioComChooser
 import kotlinx.coroutines.launch
 import org.json.JSONObject
-import java.io.File
-import java.io.FileOutputStream
-import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.text.font.FontWeight
 
 // quem fala
 enum class Role { USER, ASSISTANT }
@@ -250,12 +252,11 @@ private fun UserMessage(msg: MessageUi) {
 
 @Composable
 private fun ChatBubble(msg: MessageUi) {
-    if (msg.role == Role.ASSISTANT) AssistantMessage(msg)
-    else UserMessage(msg)
+    if (msg.role == Role.ASSISTANT) AssistantMessage(msg) else UserMessage(msg)
 }
 
 // -------------------------------
-// ROW DE MENSAGENS RÁPIDAS (MODERNA)
+// ROW DE MENSAGENS RÁPIDAS (compacto)
 // -------------------------------
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -268,24 +269,14 @@ private fun QuickRepliesRow(
             .fillMaxWidth()
             .padding(horizontal = 10.dp, vertical = 4.dp)
     ) {
-
-        // Cabeçalho mais limpo
         Text(
             text = "Sugestões da Guardiã",
             fontSize = 13.sp,
             color = Color(0xFF004D40),
             fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.padding(start = 4.dp, bottom = 2.dp)
-        )
-
-        Text(
-            text = "Toque para começar rápido uma conversa.",
-            fontSize = 11.sp,
-            color = Color(0xFF5F7B76),
             modifier = Modifier.padding(start = 4.dp, bottom = 6.dp)
         )
 
-        // Linha de chips
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -324,8 +315,6 @@ private fun QuickRepliesRow(
     }
 }
 
-
-
 // -------------------------------
 // TELA PRINCIPAL
 // -------------------------------
@@ -338,16 +327,14 @@ fun GuardiaScreen() {
     var userMessage by remember { mutableStateOf("") }
     var isTyping by remember { mutableStateOf(false) }
 
-    var lastSeverity by remember { mutableStateOf<Int?>(null) }
-    var lastReport by remember { mutableStateOf<String?>(null) }
+    // ✅ Guardar o relatório REAL do banco (o recém-salvo)
+    var lastRelatorio by remember { mutableStateOf<RelatorioEntity?>(null) }
 
     val context = LocalContext.current
 
-    // DB
     val db = remember(context) { RelatorioDatabase.getInstance(context) }
     val relatorioRepo = remember(db) { RelatorioRepository(db.relatorioDao()) }
 
-    // 🔹 Mensagens rápidas
     val quickReplies = listOf(
         "Suspeito que minha filha está falando com pessoas mais velhas.",
         "Acho que meu filho está sendo vítima de grooming.",
@@ -357,7 +344,6 @@ fun GuardiaScreen() {
         "Quero proteger a privacidade online do meu filho."
     )
 
-    // 🎤 Launcher para reconhecimento de voz via Intent
     val speechLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -365,18 +351,13 @@ fun GuardiaScreen() {
             val data = result.data
             val matches = data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
             val text = matches?.firstOrNull()
-            if (!text.isNullOrBlank()) {
-                userMessage = text
-            }
+            if (!text.isNullOrBlank()) userMessage = text
         }
     }
 
     fun startVoiceInput() {
         val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-            putExtra(
-                RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
-            )
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
             putExtra(RecognizerIntent.EXTRA_LANGUAGE, "pt-BR")
             putExtra(RecognizerIntent.EXTRA_PROMPT, "Pode falar, estou te ouvindo…")
         }
@@ -387,7 +368,6 @@ fun GuardiaScreen() {
         }
     }
 
-    // 🔹 Função reutilizável para enviar mensagem (texto ou rápida)
     fun sendMessage(originalInput: String) {
         val original = originalInput.trim()
         if (original.isBlank()) return
@@ -400,8 +380,7 @@ fun GuardiaScreen() {
 
         userMessage = ""
         isTyping = true
-        lastReport = null
-        lastSeverity = null
+        lastRelatorio = null
 
         scope.launch {
             try {
@@ -409,8 +388,8 @@ fun GuardiaScreen() {
 
                 if (res.isSuccessful) {
                     val raw = res.body()?.string()
-                    val (replyText, severity, reportText) = try {
 
+                    val replyText = try {
                         val json = JSONObject(raw ?: "{}")
 
                         val reply = json.optString(
@@ -421,57 +400,43 @@ fun GuardiaScreen() {
                         val risk = json.optJSONObject("risk")
                         val nivel = risk?.optString("nivel") ?: "Moderado"
                         val orientacao = risk?.optString("orientacao") ?: ""
-                        val encaminhamento =
-                            risk?.optString("encaminhamento") ?: ""
+                        val encaminhamento = risk?.optString("encaminhamento") ?: ""
 
                         val contextoJson = json.optJSONObject("contexto")
                         val resumo = contextoJson?.optString("resumoSituacao") ?: ""
                         val categoria = contextoJson?.optString("categoria") ?: ""
 
-                        val severityInt = when (nivel.lowercase()) {
-                            "alerta" -> 2
-                            "urgente" -> 3
-                            else -> 1
-                        }
-
-                        val report = buildString {
-                            appendLine("Resumo da situação: $resumo")
-                            appendLine("Categoria: $categoria")
-                            appendLine("Nível de risco: $nivel")
-                            if (orientacao.isNotBlank()) appendLine("Orientação: $orientacao")
-                            if (encaminhamento.isNotBlank()) appendLine("Encaminhamento: $encaminhamento")
-                        }.trim()
-
-                        if (report.isNotBlank()) {
-                            relatorioRepo.salvar(
-                                RelatorioEntity(
-                                    resumo = resumo.ifBlank { original },
-                                    categoria = categoria.ifBlank { "nao_informada" },
-                                    risco = nivel,
-                                    orientacao = orientacao,
-                                    encaminhamento = encaminhamento,
-                                    textoCompleto = report
-                                )
-                            )
-                        }
-
-                        Triple(
-                            reply.replace("\n", " ").trim(),
-                            severityInt,
-                            report
+                        val entity = RelatorioEntity(
+                            resumo = resumo.ifBlank { original },
+                            categoria = categoria.ifBlank { "nao_informada" },
+                            risco = nivel,
+                            orientacao = orientacao,
+                            encaminhamento = encaminhamento,
+                            textoCompleto = buildString {
+                                appendLine("Resumo da situação: $resumo")
+                                appendLine("Categoria: $categoria")
+                                appendLine("Nível de risco: $nivel")
+                                if (orientacao.isNotBlank()) appendLine("Orientação: $orientacao")
+                                if (encaminhamento.isNotBlank()) appendLine("Encaminhamento: $encaminhamento")
+                            }.trim()
                         )
 
+                        // ✅ salva no banco
+                        relatorioRepo.salvar(entity)
+
+                        // ✅ pega do banco o mais recente "de verdade"
+                        // (evita abrir relatório errado por ordem não garantida)
+                        val ultimo = relatorioRepo
+                            .listarTodos()
+                            .maxByOrNull { it.dataHora }
+
+                        lastRelatorio = ultimo
+
+                        reply.replace("\n", " ").trim()
                     } catch (e: Exception) {
-                        Triple(
-                            raw?.replace("\n", " ")?.trim()
-                                ?: "Não consegui processar a resposta.",
-                            0,
-                            ""
-                        )
+                        raw?.replace("\n", " ")?.trim()
+                            ?: "Não consegui processar a resposta."
                     }
-
-                    lastSeverity = severity
-                    lastReport = reportText.takeIf { it.isNotBlank() }
 
                     messages += MessageUi(
                         id = System.currentTimeMillis().toString() + "_a",
@@ -494,7 +459,6 @@ fun GuardiaScreen() {
                     role = Role.ASSISTANT,
                     text = "Falha de rede no app: ${e.message ?: "desconhecida"}"
                 )
-
             } finally {
                 isTyping = false
             }
@@ -504,9 +468,9 @@ fun GuardiaScreen() {
     LaunchedEffect(Unit) {
         if (messages.isEmpty()) {
             messages += MessageUi(
-                "welcome",
-                Role.ASSISTANT,
-                "Olá, Lívia! Me diga, o que temos para hoje?"
+                id = "welcome",
+                role = Role.ASSISTANT,
+                text = "Olá, Lívia! Me diga, o que temos para hoje?"
             )
         }
     }
@@ -586,7 +550,6 @@ fun GuardiaScreen() {
                     .padding(6.dp)
             ) {
 
-                // LISTA DE MENSAGENS
                 LazyColumn(
                     modifier = Modifier
                         .weight(1f)
@@ -602,33 +565,17 @@ fun GuardiaScreen() {
                         item { TypingBubble() }
                     }
 
-                    // BOTÃO DO PDF
-                    if (lastReport != null && lastReport!!.isNotBlank()) {
+                    // ✅ abre o relatório MAIS RECENTE salvo (correto do contexto)
+                    val r = lastRelatorio
+                    if (r != null) {
                         item {
                             TextButton(
                                 onClick = {
-                                    try {
-                                        val pdfFile = generatePdfReport(context, lastReport!!)
-                                        val uri = FileProvider.getUriForFile(
-                                            context,
-                                            "${context.packageName}.provider",
-                                            pdfFile
-                                        )
-
-                                        val openPdf = Intent(Intent.ACTION_VIEW).apply {
-                                            setDataAndType(uri, "application/pdf")
-                                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                        }
-
-                                        try {
-                                            context.startActivity(openPdf)
-                                        } catch (e: ActivityNotFoundException) {
-                                            e.printStackTrace()
-                                        }
-
-                                    } catch (e: Exception) {
-                                        e.printStackTrace()
-                                    }
+                                    abrirRelatorioComChooser(
+                                        context = context,
+                                        relatorio = r,
+                                        gerarPdf = ::criarPdfDoRelatorio
+                                    )
                                 },
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -640,17 +587,13 @@ fun GuardiaScreen() {
                     }
                 }
 
-                // 🔹 MENSAGENS RÁPIDAS (CARD DESTACADO)
                 QuickRepliesRow(
                     options = quickReplies,
                     onSelect = { selected ->
-                        if (!isTyping) {
-                            sendMessage(selected)
-                        }
+                        if (!isTyping) sendMessage(selected)
                     }
                 )
 
-                // INPUT
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -659,7 +602,7 @@ fun GuardiaScreen() {
                         .background(Color(0xFFEFF2F4)),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    IconButton(onClick = { /* futuro: anexar arquivo */ }) {
+                    IconButton(onClick = { /* futuro */ }) {
                         Icon(Icons.Default.Add, "Mais", tint = Color(0xFF003E3A))
                     }
 
@@ -682,11 +625,7 @@ fun GuardiaScreen() {
 
                     IconButton(
                         onClick = {
-                            if (!canSend) {
-                                startVoiceInput()
-                            } else {
-                                sendMessage(userMessage)
-                            }
+                            if (!canSend) startVoiceInput() else sendMessage(userMessage)
                         }
                     ) {
                         if (canSend) {
@@ -699,50 +638,6 @@ fun GuardiaScreen() {
             }
         }
     }
-}
-
-// ----------------------------------------------------
-// GERAR PDF
-// ----------------------------------------------------
-fun generatePdfReport(context: Context, reportText: String): File {
-    val pageWidth = 595
-    val pageHeight = 842
-
-    val pdfDocument = PdfDocument()
-    val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, 1).create()
-    val page = pdfDocument.startPage(pageInfo)
-    val canvas = page.canvas
-
-    val paint = Paint()
-    paint.isAntiAlias = true
-
-    val textPaint = TextPaint(paint).apply { textSize = 12f }
-
-    val leftMargin = 40f
-    val topMargin = 60f
-    val usableWidth = pageWidth - (leftMargin * 2)
-
-    val staticLayout = StaticLayout.Builder
-        .obtain(reportText, 0, reportText.length, textPaint, usableWidth.toInt())
-        .setAlignment(Layout.Alignment.ALIGN_NORMAL)
-        .setLineSpacing(0f, 1f)
-        .setIncludePad(false)
-        .build()
-
-    canvas.save()
-    canvas.translate(leftMargin, topMargin)
-    staticLayout.draw(canvas)
-    canvas.restore()
-
-    pdfDocument.finishPage(page)
-
-    val dir = File(context.getExternalFilesDir(null), "relatorios_guardia")
-    if (!dir.exists()) dir.mkdirs()
-
-    val file = File(dir, "relatorio_guardia_${System.currentTimeMillis()}.pdf")
-    FileOutputStream(file).use { pdfDocument.writeTo(it) }
-    pdfDocument.close()
-    return file
 }
 
 @Preview(showBackground = true)
